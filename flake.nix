@@ -1,0 +1,33 @@
+{
+  outputs = inputs:
+    let custom-nixpkgs = {
+      unstable = import inputs.u-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true;};
+      stable = import inputs.s-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true;};
+    };
+    in {
+      nixosConfigurations.gurl = inputs.s-nixpkgs.lib.nixosSystem {
+        modules = [ ./configuration.nix ];
+        system = "x86_64-linux";
+        specialArgs = { inputs = inputs; s-nixpkgs = custom-nixpkgs.stable; u-nixpkgs = custom-nixpkgs.unstable; };
+      };
+    };
+
+  inputs = {
+    nix-software-center = {
+      type = "github";
+      owner = "vlinkz";
+      repo = "nix-software-center";
+    };
+    nixos-conf-editor = {
+      type = "github";
+      owner = "vlinkz";
+      repo = "nixos-conf-editor";
+    };
+    u-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    s-nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-23.05";
+      inputs.nixpkgs.follows = "s-nixpkgs";
+    };
+  };
+}

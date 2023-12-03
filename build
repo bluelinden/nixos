@@ -1,3 +1,58 @@
-#!/bin/sh
-cp -r /cfg/* /etc/nixos/
-nixos-rebuild switch
+#!/bin/bash
+
+echo "blue linden's nixos configuration wizard"
+echo "(c) 2023 blue linden. This script is licensed under the MIT license."
+
+parse_args() {
+    local key="$1"
+    local present="$2"
+    shift 2
+
+    while [ $# -gt 0 ]; do
+        if [ "$1" = "--$key" ]; then
+            if [ "$present" = "present" ]; then
+                echo "true"
+            else
+                shift
+                echo "$1"
+            fi
+            return
+        fi
+        shift
+    done
+
+    echo "false"
+}
+
+# exit if /etc/nixos is not writable.
+if [ ! -w /etc/nixos && $( ! parse_args "in-place" "present") ]; then
+	echo "Oops! /etc/nixos is not writable and you don't have the --in-place flag set. Try running this script as root or adding --in-place if you're able to rebuild NixOS without root permissions."
+	exit 1
+fi
+
+# if this directory is a git repository...
+if [ -d ./.git ]; then
+	if [$(gum confirm "You're using a git repository. Do you want to commit your changes?")]; then
+		COMMITMSG=$(gum input --placeholder "Fixed issues, kicked ass, etc.")
+		git add .
+		git commit -m "$COMMITMSG"
+	fi
+fi
+
+# if the current directory isn't /etc/nixos, cp it there unless the user says to do it in place.
+if [ ! $(pwd) = "/etc/nixos" && $( ! parse_args "in-place" "present") ]; then
+	gum spinner --title "Copying configuration to the NixOS config directory..." --show-output -- cp -r . /etc/nixos
+	CONFIG_DIR=/etc/nixos
+else
+	CONFIG_DIR=$(pwd)
+fi
+
+# if the config directory is a flake, create the argument string.
+if [ -d "$CONFIG_DIR/flake.nix" ]; then
+	LOCATION_ARGS="-f $CONFIG_DIR"
+else 
+	LOCATION_ARGS="-I $CONFIG_DIR/configuration.nix"
+fi
+
+# run nixos-rebuild
+gum spinner --title "Rebuilding NixOS..." --show-output -- nixos-rebuild switch --

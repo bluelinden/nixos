@@ -5,19 +5,43 @@ in {
   home.packages = with pkgs; [
     activitywatch
     gnome.dconf-editor
-    firefox
+    gnome.ghex
+    gnome.gnome-terminal
+    gnome.gitg
+    upkgs.firefox
     thunderbird
     ulauncher
     gnome3.gnome-tweaks
-    upkgs.vscode.fhs
+    cosmocc
+    vscode-fhs
+    upkgs.beeper
     htop
+    fraunces
+    lexend
+    ookla-speedtest
+    safeeyes
+    ungoogled-chromium
     upkgs.bruno
+    upkgs.localsend
+    dynamic-wallpaper
     gnomeExtensions.blur-my-shell
     gnomeExtensions.appindicator
     gnomeExtensions.caffeine
     gnomeExtensions.just-perfection
-    gnomeExtensions.paperwm    
+    # gnomeExtensions.paperwm
+    gnomeExtensions.compiz-windows-effect
   ];
+  home.sessionPath = [
+    "$HOME/.bun/bin"
+  ];
+  home.sessionVariables = rec {
+  	NIXOS_OZONE_WL = 1;
+  	XDG_CACHE_HOME  = "$HOME/.cache";
+  	XDG_CONFIG_HOME = "$HOME/.config";
+  	XDG_DATA_HOME   = "$HOME/.local/share";
+  	XDG_STATE_HOME  = "$HOME/.local/state";
+  	WSCRIBE_MODELS_DIR = "${XDG_DATA_HOME}/whisper-models";
+  };
   systemd = {
   	user = {
   	  services = {

@@ -3,12 +3,13 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, specialArgs, ... }:
-let pkgs = specialArgs.s-nixpkgs; upkgs = specialArgs.u-nixpkgs;
+let pkgs = specialArgs.s-nixpkgs; upkgs = specialArgs.u-nixpkgs; bun-baseline = upkgs.callPackage ( import ./packages/bun-baseline/default.nix ) {}; inkscape-updated = upkgs.callPackage ( import ./packages/inkscape-1.3/default.nix ) {}; wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {};
 in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
+      specialArgs.inputs.flatpaks.nixosModules.default
     ];
 
   # Allow unfree packages
@@ -19,7 +20,7 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.crashDump.enable = true;
   boot.initrd.verbose = false;
-  boot.kernelPackages = upkgs.linuxPackages_lqx;
+  boot.kernelPackages = upkgs.linuxPackages_xanmod_latest;
   boot.loader.systemd-boot.graceful = true;
   boot.loader.timeout = 0;
   boot.loader.systemd-boot.editor = false;
@@ -69,6 +70,11 @@ in {
     LC_TIME = "en_US.UTF-8";
   };
 
+  i18n.inputMethod = {
+    enabled = "ibus";
+    ibus.engines = with upkgs.ibus-engines; [ typing-booster ];
+   };
+
 
   # Enable the X11 windowing system.
   services.xserver = {
@@ -93,6 +99,28 @@ in {
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
+
+  services.dnscrypt-proxy2 = {
+    enable = true;
+    settings = {
+      ipv6_servers = true;
+      require_dnssec = true;
+      sources.public-resolvers = {
+        urls = [
+          "https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md"
+          "https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md"
+        ];
+        cache_file = "/var/lib/dnscrypt-proxy2/public-resolvers.md";
+        minisign_key = "RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3";
+      };
+      # You can choose a specific set of servers from https://github.com/DNSCrypt/dnscrypt-resolvers/blob/master/v3/public-resolvers.md
+      # server_names = [ ... ];
+    };
+  };
+
+  systemd.services.dnscrypt-proxy2.serviceConfig = {
+    StateDirectory = "dnscrypt-proxy";
+  };
 
   # Enable sound with pipewire.
   sound.enable = true;
@@ -141,17 +169,44 @@ in {
     rr
     file
     micro
+    openjdk17
     dconf2nix
+    papirus-icon-theme
+    gum
     upkgs.nodejs_21
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
-    upkgs.bun
+    inkscape-updated
+    bun-baseline
+    hexedit
+    comma
     upkgs.deno
+    upkgs.adw-gtk3
+    asciinema
+    nixpkgs-fmt
+    unzip
+    gnumake
+    dig
+    git-lfs
+    pciutils
+    gparted
+    steam-run
+    maturin
+    clang
+    python310Full
+    python310Packages.pip
+    python310Packages.setuptools
+    nix-init
+    wscribe
     specialArgs.inputs.nix-software-center.packages.${system}.nix-software-center
     specialArgs.inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
+    specialArgs.inputs.nix-alien.packages.${system}.nix-alien
   ];
   environment.binsh = "${pkgs.dash}/bin/dash";
 
+  environment.gnome.excludePackages = with pkgs.gnome; [
+  	gnome-software
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -197,6 +252,7 @@ in {
     HibernateMode=shutdown
     SuspendState=freeze
   '';
+  systemd.services.NetworkManager-wait-online.enable = false;
   systemd.tmpfiles.rules = [
     "d /cfg 1774 root configmanager"
   ];
@@ -207,5 +263,19 @@ in {
     users = {
       blue = import ./home/blue/home.nix {specialArgs = specialArgs;};
     };
+  };
+
+  services.flatpak = {
+  	enable = true;
+  	enable-debug = true;
+  	target-dir = "/var/lib/flatpak";
+  	remotes = {
+  	  "gnome-nightly" = "https://nightly.gnome.org/gnome-nightly.flatpakrepo";
+  	  "gradience-nightly" = "https://gradienceteam.github.io/Gradience/index.flatpakrepo";
+  	  "flathub" = "https://dl.flathub.org/repo/flathub.flatpakrepo";
+  	};
+  	packages = [
+  	  "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
+  	];
   };
 }

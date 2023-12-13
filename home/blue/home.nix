@@ -10,7 +10,10 @@ in {
     gnome.gitg
     upkgs.firefox
     thunderbird
+    gay
     ulauncher
+    fractal
+#    upkgs.libresprite
     gnome3.gnome-tweaks
     cosmocc
     vscode-fhs
@@ -18,9 +21,12 @@ in {
     htop
     fraunces
     lexend
+    upkgs.aseprite
+#    upkgs.inkscape
     ookla-speedtest
     safeeyes
     ungoogled-chromium
+    upkgs.vivaldi
     upkgs.bruno
     upkgs.localsend
     dynamic-wallpaper

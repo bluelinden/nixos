@@ -3,13 +3,20 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, specialArgs, ... }:
-let pkgs = specialArgs.s-nixpkgs; upkgs = specialArgs.u-nixpkgs; bun-baseline = upkgs.callPackage ( import ./packages/bun-baseline/default.nix ) {}; inkscape-updated = upkgs.callPackage ( import ./packages/inkscape-1.3/default.nix ) {}; wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {};
+let pkgs = specialArgs.s-nixpkgs; 
+upkgs = specialArgs.u-nixpkgs; 
+bun-baseline = upkgs.callPackage ( import ./packages/bun-baseline/default.nix ) {}; 
+inkscape-updated = upkgs.callPackage ( import ./packages/inkscape-1.3/default.nix ) {}; 
+wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {}; 
+webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) {};
+niri = upkgs.callPackage (./packages/niri/pkg.nix) { inputs = specialArgs.inputs; };
 in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
       specialArgs.inputs.flatpaks.nixosModules.default
+      ./packages/niri/module.nix
     ];
 
   # Allow unfree packages
@@ -20,6 +27,8 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.crashDump.enable = true;
   boot.initrd.verbose = false;
+  boot.initrd.systemd.enable = true;
+  boot.initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
   boot.kernelPackages = upkgs.linuxPackages_xanmod_latest;
   boot.loader.systemd-boot.graceful = true;
   boot.loader.timeout = 0;
@@ -31,14 +40,16 @@ in {
   boot.loader.grub.enable = false;
   boot.loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
   boot.loader.grub.backgroundColor = "#4b1128";
-  boot.plymouth.enable = true;
-  boot.plymouth.themePackages = [ pkgs.nixos-bgrt-plymouth ];
+  boot.plymouth.enable = false;
+  # boot.plymouth.themePackages = [ pkgs.adi1090x-plymouth-themes ];
+  # boot.plymouth.theme = "ibm";
   boot.loader.systemd-boot.memtest86.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 30;
   boot.loader.efi.canTouchEfiVariables = true;
 
   swapDevices = [
     {
-      label = "bigswap";
+      device = "/swap/swapfile";
     }
   ];
 
@@ -149,19 +160,24 @@ in {
   users.users.blue = {
     isNormalUser = true;
     description = "blue linden";
-    extraGroups = [ "networkmanager" "wheel" "configmanager" ];
+    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" ];
   };
   users.groups.configmanager = {
     name = "configmanager";
   	members = ["blue"];
   	gid = 1337;
   };
+  users.groups.plugdev = {
+  	name = "plugdev";
+  	members = ["blue"];
+  	gid = 990;
+  };
   users.defaultUserShell = pkgs.zsh;
 
 
 
   # List packages installed in system profile. To search, run:
-  # $ nix search wget
+  # $ search wget
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
@@ -176,7 +192,6 @@ in {
     upkgs.nodejs_21
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
-    inkscape-updated
     bun-baseline
     hexedit
     comma
@@ -186,16 +201,20 @@ in {
     nixpkgs-fmt
     unzip
     gnumake
+    inkscape-updated
     dig
     git-lfs
+    webusb-udev
     pciutils
+    usbutils
     gparted
     steam-run
     maturin
+    niri
     clang
-    python310Full
-    python310Packages.pip
-    python310Packages.setuptools
+    # python310Full
+    # python310Packages.pip
+    # python310Packages.setuptools
     nix-init
     wscribe
     specialArgs.inputs.nix-software-center.packages.${system}.nix-software-center
@@ -235,6 +254,16 @@ in {
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "23.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.optimise.automatic = true;
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 21d";
+  };
+  nix.extraOptions = ''
+    min-free = ${toString (5 * 1024 * 1024 * 1024)}
+    max-free = ${toString (15 * 1024 * 1024 * 1024)}
+  '';
   appstream.enable = true;
   programs.zsh.zsh-autoenv.enable = true;
   programs.zsh.enable = true;

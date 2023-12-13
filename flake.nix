@@ -18,6 +18,10 @@
       owner = "vlinkz";
       repo = "nix-software-center";
     };
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "u-nixpkgs";
+    };
     nixos-conf-editor = {
       type = "github";
       owner = "vlinkz";
@@ -28,6 +32,11 @@
       owner = "thiagokokada";
       repo = "nix-alien";
     };
+    niri-source = {
+      url = "github:YaLTeR/niri";
+      flake = false;
+    };
+    
     u-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     s-nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flatpaks.url = "github:GermanBread/declarative-flatpak/dev";

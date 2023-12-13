@@ -1,25 +1,5 @@
 {
   "nodes": {
-    "crane": {
-      "inputs": {
-        "nixpkgs": [
-          "u-nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1702488130,
-        "narHash": "sha256-Bz4KTuBARAQY8952CpmYVD9o/LoScYjdw8KrK2OjEoA=",
-        "owner": "ipetkov",
-        "repo": "crane",
-        "rev": "33dbb6a8342e1cf6252c8976d02ff8a7632aa071",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ipetkov",
-        "repo": "crane",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "locked": {
         "lastModified": 1696426674,
@@ -157,22 +137,6 @@
         "owner": "nix-community",
         "ref": "release-23.11",
         "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "niri-source": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1702100606,
-        "narHash": "sha256-FkNx1N7QcNwziaWSjvEKf9gnw6pEIodFXboicTmvxoY=",
-        "owner": "YaLTeR",
-        "repo": "niri",
-        "rev": "4fefab7d6b8298cfcd1a022b9c1ceeb039ca8e63",
-        "type": "github"
-      },
-      "original": {
-        "owner": "YaLTeR",
-        "repo": "niri",
         "type": "github"
       }
     },
@@ -340,10 +304,8 @@
     },
     "root": {
       "inputs": {
-        "crane": "crane",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
-        "niri-source": "niri-source",
         "nix-alien": "nix-alien",
         "nix-software-center": "nix-software-center",
         "nixos-conf-editor": "nixos-conf-editor",

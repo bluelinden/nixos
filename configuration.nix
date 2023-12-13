@@ -6,17 +6,15 @@
 let pkgs = specialArgs.s-nixpkgs; 
 upkgs = specialArgs.u-nixpkgs; 
 bun-baseline = upkgs.callPackage ( import ./packages/bun-baseline/default.nix ) {}; 
-inkscape-updated = upkgs.callPackage ( import ./packages/inkscape-1.3/default.nix ) {}; 
 wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {}; 
 webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) {};
-niri = upkgs.callPackage (./packages/niri/pkg.nix) { inputs = specialArgs.inputs; };
+niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
 in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
       specialArgs.inputs.flatpaks.nixosModules.default
-      ./packages/niri/module.nix
     ];
 
   # Allow unfree packages
@@ -201,7 +199,7 @@ in {
     nixpkgs-fmt
     unzip
     gnumake
-    inkscape-updated
+    inkscape
     dig
     git-lfs
     webusb-udev

@@ -8,42 +8,46 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "sd_mod" "sr_mod" "rtsx_pci_sdmmc" ];
+  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "uas" "sd_mod" "rtsx_pci_sdmmc" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
+  boot.initrd.luks.devices."boocrypt".device = "/dev/disk/by-uuid/fcd33135-2192-4840-95f6-81b41e1ace1a";
+
+
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/098447a4-05ce-4e74-a77b-2378489bc4ba";
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       options = [ "subvol=root" ];
     };
 
+
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/7F97-23EB";
+    { device = "/dev/disk/by-uuid/C191-6F86";
       fsType = "vfat";
     };
 
   fileSystems."/cfg" =
-    { device = "/dev/disk/by-uuid/098447a4-05ce-4e74-a77b-2378489bc4ba";
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       options = [ "subvol=config" ];
     };
 
   fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/098447a4-05ce-4e74-a77b-2378489bc4ba";
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       options = [ "subvol=home" ];
     };
 
   fileSystems."/nix" =
-    { device = "/dev/disk/by-uuid/098447a4-05ce-4e74-a77b-2378489bc4ba";
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       options = [ "subvol=store" ];
     };
 
   fileSystems."/swap" =
-    { device = "/dev/disk/by-uuid/098447a4-05ce-4e74-a77b-2378489bc4ba";
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       options = [ "subvol=swap" ];
     };
@@ -55,7 +59,7 @@
   # still possible to use this option, but it's recommended to use it in conjunction
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
+  # networking.interfaces.enp0s31f6.useDHCP = lib.mkDefault true;
   # networking.interfaces.wlp2s0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

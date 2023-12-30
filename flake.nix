@@ -5,8 +5,8 @@
       stable = import inputs.s-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true;};
     };
     in {
-      nixosConfigurations.gurl = inputs.s-nixpkgs.lib.nixosSystem {
-        modules = [ ./configuration.nix ];
+      nixosConfigurations.boo = inputs.s-nixpkgs.lib.nixosSystem {
+        modules = [ ./configuration.nix inputs.lanzaboote.nixosModules.lanzaboote ];
         system = "x86_64-linux";
         specialArgs = { inputs = inputs; s-nixpkgs = custom-nixpkgs.stable; u-nixpkgs = custom-nixpkgs.unstable; };
       };
@@ -32,6 +32,7 @@
     u-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     s-nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flatpaks.url = "github:GermanBread/declarative-flatpak/dev";
+    lanzaboote.url = "github:nix-community/lanzaboote";
     home-manager = {
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "s-nixpkgs";

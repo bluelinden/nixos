@@ -2,10 +2,9 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, specialArgs, ... }:
+{ config, lib, specialArgs, ... }:
 let pkgs = specialArgs.s-nixpkgs; 
 upkgs = specialArgs.u-nixpkgs; 
-bun-baseline = upkgs.callPackage ( import ./packages/bun-baseline/default.nix ) {}; 
 wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {}; 
 webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) {};
 niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
@@ -22,28 +21,46 @@ in {
 
 
   # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.crashDump.enable = true;
-  boot.initrd.verbose = false;
-  boot.initrd.systemd.enable = true;
-  boot.initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
-  boot.kernelPackages = upkgs.linuxPackages_xanmod_latest;
-  boot.loader.systemd-boot.graceful = true;
-  boot.loader.timeout = 0;
-  boot.loader.systemd-boot.editor = false;
-  boot.loader.grub.memtest86.enable = false;
-  boot.loader.grub.device = "/dev/sda";
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.fontSize = 16;
-  boot.loader.grub.enable = false;
-  boot.loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
-  boot.loader.grub.backgroundColor = "#4b1128";
-  boot.plymouth.enable = false;
-  # boot.plymouth.themePackages = [ pkgs.adi1090x-plymouth-themes ];
-  # boot.plymouth.theme = "ibm";
-  boot.loader.systemd-boot.memtest86.enable = true;
-  boot.loader.systemd-boot.configurationLimit = 30;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot = {
+    loader.systemd-boot.enable = lib.mkForce false;
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/etc/secureboot";
+    };
+    crashDump.enable = true;
+    initrd.verbose = false;
+    consoleLogLevel = 0;
+    kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
+    initrd.systemd.enable = true;
+    initrd.kernelModules = [ "tpm-tis" "i915" ];
+    
+    initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
+    kernelPackages = upkgs.linuxPackages_xanmod_latest;
+    loader.systemd-boot.graceful = true;
+    loader.timeout = 0;
+    loader.systemd-boot.editor = false;
+    loader.grub.memtest86.enable = false;
+    loader.grub.device = "/dev/sda";
+    loader.grub.efiSupport = true;
+    loader.grub.fontSize = 16;
+    
+    loader.grub.enable = false;
+    loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
+    loader.grub.backgroundColor = "#4b1128";
+    plymouth.enable = true;
+    plymouth.themePackages = [ pkgs.nixos-bgrt-plymouth ];
+    plymouth.theme = "nixos-bgrt";
+    loader.systemd-boot.configurationLimit = 30;
+    loader.efi.canTouchEfiVariables = true;
+    bootspec.enable = true;
+  };
+
+  services.kmscon = {
+    enable = true;
+    hwRender = true;
+  };
+
+  console.earlySetup = true;
 
   swapDevices = [
     {
@@ -51,15 +68,22 @@ in {
     }
   ];
 
-  networking.hostName = "gurl"; # Define your hostname.
+  networking.hostName = "boo"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # Enable networking
+  # Enable networking and tailscale
   networking.networkmanager.enable = true;
+  networking.nftables.enable = true;
+  services.tailscale = {
+  	enable = true;
+  	package = upkgs.tailscale;
+  	openFirewall = true;
+  };
+  networking.firewall.trustedInterfaces = ["tailscale0"];
 
   # Set your time zone.
   time.timeZone = "America/New_York";
@@ -82,7 +106,9 @@ in {
   i18n.inputMethod = {
     enabled = "ibus";
     ibus.engines = with upkgs.ibus-engines; [ typing-booster ];
-   };
+  };
+
+  
 
 
   # Enable the X11 windowing system.
@@ -98,12 +124,30 @@ in {
       gdm = {
         enable = true;
         wayland = true;
-        
+        banner = ''
+          this computer is the property of blue linden. 
+        '';
+       
       };
+      # sessionPackages = [ niri ];
       autoLogin.enable = false;
     };
   };
   services.tlp.enable = false;
+
+  services.usbmuxd = {
+  	enable = true;
+  	package = pkgs.usbmuxd2;
+  };
+
+  services.fwupd.enable = true;
+
+  services.udev.extraHwdb = ''
+    EVDEV_ABS_00=::24
+    EVDEV_ABS_01=::23
+    EVDEV_ABS_35=::24
+    EVDEV_ABS_36=::23
+  '';
 
 
   # Enable CUPS to print documents.
@@ -131,10 +175,14 @@ in {
     StateDirectory = "dnscrypt-proxy";
   };
 
+
   # Enable sound with pipewire.
   sound.enable = true;
   hardware.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
+  hardware.opengl.enable = true;
+  hardware.opengl.driSupport32Bit = false;
+  hardware.opengl.driSupport = true;
   security.rtkit.enable = true;
   security.apparmor.enable = true;
   security.audit.enable = false;
@@ -151,6 +199,11 @@ in {
     #media-session.enable = true;
   };
 
+  programs.dconf.enable = true;
+  programs.virt-manager.enable = true;
+  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd.qemu.swtpm.enable = true;
+
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
 
@@ -158,7 +211,7 @@ in {
   users.users.blue = {
     isNormalUser = true;
     description = "blue linden";
-    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" ];
+    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "libvirtd" ];
   };
   users.groups.configmanager = {
     name = "configmanager";
@@ -171,6 +224,15 @@ in {
   	gid = 990;
   };
   users.defaultUserShell = pkgs.zsh;
+
+  systemd.user.services.ulauncher = {
+    enable = true;
+    description = "Start Ulauncher";
+    script = "${upkgs.ulauncher}/bin/ulauncher --hide-window";
+    documentation = [ "https://github.com/Ulauncher/Ulauncher/blob/f0905b9a9cabb342f9c29d0e9efd3ba4d0fa456e/contrib/systemd/ulauncher.service" ];
+    wantedBy = [ "graphical.target" "multi-user.target" ];
+    after = [ "display-manager.service" ];
+  };
 
 
 
@@ -187,16 +249,29 @@ in {
     dconf2nix
     papirus-icon-theme
     gum
+    sbctl
     upkgs.nodejs_21
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
-    bun-baseline
+    bun
     hexedit
     comma
+    libinput
     upkgs.deno
+    tpm2-tss
+    upkgs.ulauncher
     upkgs.adw-gtk3
+    opendrop
+    owl
     asciinema
+    stress
+    s-tui
     nixpkgs-fmt
+    gnome-network-displays
+    firmware-updater
+    neofetch
+    fastfetch
+    qemu
     unzip
     gnumake
     inkscape
@@ -208,13 +283,16 @@ in {
     gparted
     steam-run
     maturin
+    libimobiledevice
+    idevicerestore
+    ifuse
     niri
     clang
     # python310Full
     # python310Packages.pip
     # python310Packages.setuptools
     nix-init
-    wscribe
+    # wscribe
     specialArgs.inputs.nix-software-center.packages.${system}.nix-software-center
     specialArgs.inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
     specialArgs.inputs.nix-alien.packages.${system}.nix-alien
@@ -275,10 +353,10 @@ in {
   powerManagement.enable = true;
   powerManagement.powertop.enable = true;
   location.provider = "geoclue2";
-  systemd.sleep.extraConfig = ''
-    HibernateMode=shutdown
-    SuspendState=freeze
-  '';
+  # systemd.sleep.extraConfig = ''
+  #   HibernateMode=shutdown
+  #   SuspendState=freeze
+  # '';
   systemd.services.NetworkManager-wait-online.enable = false;
   systemd.tmpfiles.rules = [
     "d /cfg 1774 root configmanager"
@@ -303,6 +381,7 @@ in {
   	};
   	packages = [
   	  "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
+  	  "flathub:app/net.hovancik.Stretchly/x86_64/stable"
   	];
   };
 }

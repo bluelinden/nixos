@@ -9,13 +9,16 @@ in {
     gnome.gnome-terminal
     gnome.gitg
     upkgs.firefox
+    upkgs.upscayl
     thunderbird
     gay
-    ulauncher
     fractal
 #    upkgs.libresprite
     gnome3.gnome-tweaks
+    gnome.gnome-boxes
     cosmocc
+    virt-viewer
+    impression
     vscode-fhs
     upkgs.beeper
     htop
@@ -26,17 +29,33 @@ in {
     ookla-speedtest
     safeeyes
     ungoogled-chromium
+    upkgs.anytype
     upkgs.vivaldi
     upkgs.bruno
     upkgs.localsend
+    upkgs.trayscale
     dynamic-wallpaper
     gnomeExtensions.blur-my-shell
+    gnomeExtensions.burn-my-windows
     gnomeExtensions.appindicator
+    gnomeExtensions.tailscale-qs
     gnomeExtensions.caffeine
     gnomeExtensions.just-perfection
     # gnomeExtensions.paperwm
     gnomeExtensions.compiz-windows-effect
+  	(makeDesktopItem {
+  	  name = "windows-vm-launch";
+  	  desktopName = "Windows 11 Pro";
+  	  exec = "${pkgs.stdenv.shell} ${./vms/windows.sh}";
+  	  comment = "Windows environment for use with Windows software";
+  	  icon = "${papirus-icon-theme}/share/icons/Papirus/128x128/apps/windows95.svg";
+  	  terminal = true;
+  	})
   ];
+  
+
+  
+  
   home.sessionPath = [
     "$HOME/.bun/bin"
   ];
@@ -47,23 +66,6 @@ in {
   	XDG_DATA_HOME   = "$HOME/.local/share";
   	XDG_STATE_HOME  = "$HOME/.local/state";
   	WSCRIBE_MODELS_DIR = "${XDG_DATA_HOME}/whisper-models";
-  };
-  systemd = {
-  	user = {
-  	  services = {
-  	  	ulauncher = {
-  	  	  Unit = {
-  	  	  	Description = "Starts ULauncher. Does nothing else.";  	  	  	
-  	  	  };
-  	  	  Install = {
-  	  	  	WantedBy = ["gnome-session.target"];
-  	  	  };
-  	  	  Service = {
-  	  	  	ExecStart = "${pkgs.ulauncher}/bin/ulauncher";
-  	  	  };
-  	  	};
-  	  };
-  	};
   };
   programs = {
     nushell = {

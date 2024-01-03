@@ -18,7 +18,7 @@ in {
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-
+  
 
   # Bootloader.
   boot = {
@@ -77,7 +77,16 @@ in {
 
   # Enable networking and tailscale
   networking.networkmanager.enable = true;
+  services.resolved.enable = true;
+  services.resolved.fallbackDns = ["1.1.1.1" "10.18.81.24" "8.8.8.8" "9.9.9.9"];
+  services.resolved.extraConfig = ''
+    DNSOverTLS=opportunistic
+  '';
+
+  networking.networkmanager.dns = "systemd-resolved";
   networking.nftables.enable = true;
+  networking.search = ["skunk-ray.ts.net"];
+  networking.nameservers = ["127.0.0.1"];
   services.tailscale = {
   	enable = true;
   	package = upkgs.tailscale;
@@ -157,7 +166,11 @@ in {
     enable = true;
     settings = {
       ipv6_servers = true;
+      doh_servers = true;
+      bootstrap_resolvers = ["1.1.1.1:853"];
       require_dnssec = true;
+      ignore_system_dns = false;
+      netprobe_address = "1.1.1.1:443";
       sources.public-resolvers = {
         urls = [
           "https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md"
@@ -266,6 +279,7 @@ in {
     asciinema
     stress
     s-tui
+    upkgs.logseq
     nixpkgs-fmt
     gnome-network-displays
     firmware-updater
@@ -277,6 +291,7 @@ in {
     inkscape
     dig
     git-lfs
+    upkgs.vscode.fhs
     webusb-udev
     pciutils
     usbutils

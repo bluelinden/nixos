@@ -1,8 +1,8 @@
 {
   outputs = inputs:
-    let custom-nixpkgs = {
-      unstable = import inputs.u-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true;};
-      stable = import inputs.s-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true;};
+    let custom-nixpkgs = rec {
+      unstable = import inputs.u-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true; config.permittedInsecurePackages = ["electron-25.9.0"];};
+      stable = import inputs.s-nixpkgs {system = "x86_64-linux"; config.allowUnfree = true; };
     };
     in {
       nixosConfigurations.boo = inputs.s-nixpkgs.lib.nixosSystem {

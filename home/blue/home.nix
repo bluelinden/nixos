@@ -10,6 +10,7 @@ in {
     gnome.gitg
     upkgs.firefox
     upkgs.upscayl
+    direnv
     thunderbird
     gay
     fractal
@@ -19,7 +20,6 @@ in {
     cosmocc
     virt-viewer
     impression
-    vscode-fhs
     upkgs.beeper
     htop
     fraunces
@@ -27,7 +27,10 @@ in {
     upkgs.aseprite
 #    upkgs.inkscape
     ookla-speedtest
+    emulsion-palette
+    halftone
     safeeyes
+    drawing
     ungoogled-chromium
     upkgs.anytype
     upkgs.vivaldi
@@ -35,6 +38,7 @@ in {
     upkgs.localsend
     upkgs.trayscale
     dynamic-wallpaper
+    upkgs.gnome-frog
     gnomeExtensions.blur-my-shell
     gnomeExtensions.burn-my-windows
     gnomeExtensions.appindicator

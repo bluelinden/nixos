@@ -3,14 +3,17 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, lib, specialArgs, ... }:
-let pkgs = specialArgs.s-nixpkgs; 
-upkgs = specialArgs.u-nixpkgs; 
-wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) {}; 
-webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) {};
-niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
-in {
+let
+  pkgs = specialArgs.s-nixpkgs;
+  upkgs = specialArgs.u-nixpkgs;
+  wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) { };
+  webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) { };
+  niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
+in
+{
   imports =
-    [ # Include the results of the hardware scan.
+    [
+      # Include the results of the hardware scan.
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
       specialArgs.inputs.flatpaks.nixosModules.default
@@ -18,7 +21,7 @@ in {
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-  
+
 
   # Bootloader.
   boot = {
@@ -33,7 +36,7 @@ in {
     kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
     initrd.systemd.enable = true;
     initrd.kernelModules = [ "tpm-tis" "i915" ];
-    
+
     initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
     kernelPackages = upkgs.linuxPackages_xanmod_latest;
     loader.systemd-boot.graceful = true;
@@ -43,7 +46,7 @@ in {
     loader.grub.device = "/dev/sda";
     loader.grub.efiSupport = true;
     loader.grub.fontSize = 16;
-    
+
     loader.grub.enable = false;
     loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
     loader.grub.backgroundColor = "#4b1128";
@@ -78,21 +81,22 @@ in {
   # Enable networking and tailscale
   networking.networkmanager.enable = true;
   services.resolved.enable = true;
-  services.resolved.fallbackDns = ["1.1.1.1" "10.18.81.24" "8.8.8.8" "9.9.9.9"];
+  # services.resolved.fallbackDns = [ "1.1.1.1" "10.18.81.24" "8.8.8.8" "9.9.9.9" ];
   services.resolved.extraConfig = ''
-    DNSOverTLS=opportunistic
+    
   '';
 
-  networking.networkmanager.dns = "systemd-resolved";
+  networking.networkmanager.dns = lib.mkForce "systemd-resolved";
+  # networking.networkmanager.dns = lib.mkForce "default";
   networking.nftables.enable = true;
-  networking.search = ["skunk-ray.ts.net"];
-  networking.nameservers = ["127.0.0.1"];
+  networking.search = [ "skunk-ray.ts.net" ];
+  # networking.nameservers = [ "127.0.0.1" ];
   services.tailscale = {
-  	enable = true;
-  	package = upkgs.tailscale;
-  	openFirewall = true;
+    enable = true;
+    package = upkgs.tailscale;
+    openFirewall = true;
   };
-  networking.firewall.trustedInterfaces = ["tailscale0"];
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
 
   # Set your time zone.
   time.timeZone = "America/New_York";
@@ -117,18 +121,18 @@ in {
     ibus.engines = with upkgs.ibus-engines; [ typing-booster ];
   };
 
-  
+
 
 
   # Enable the X11 windowing system.
   services.xserver = {
-    enable= true;
+    enable = true;
     layout = "us";
     xkbVariant = "";
     desktopManager = {
       gnome.enable = true;
     };
-    
+
     displayManager = {
       gdm = {
         enable = true;
@@ -136,7 +140,7 @@ in {
         banner = ''
           this computer is the property of blue linden. 
         '';
-       
+
       };
       # sessionPackages = [ niri ];
       autoLogin.enable = false;
@@ -145,8 +149,8 @@ in {
   services.tlp.enable = false;
 
   services.usbmuxd = {
-  	enable = true;
-  	package = pkgs.usbmuxd2;
+    enable = true;
+    package = pkgs.usbmuxd2;
   };
 
   services.fwupd.enable = true;
@@ -167,10 +171,10 @@ in {
     settings = {
       ipv6_servers = true;
       doh_servers = true;
-      bootstrap_resolvers = ["1.1.1.1:853"];
       require_dnssec = true;
-      ignore_system_dns = false;
-      netprobe_address = "1.1.1.1:443";
+      bootstrap_resolvers = [ "9.9.9.9:53" "8.8.8.8:53" "10.18.81.24:53" ];
+      ignore_system_dns = true;
+      netprobe_address = "216.58.212.46:80";
       sources.public-resolvers = {
         urls = [
           "https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md"
@@ -185,7 +189,7 @@ in {
   };
 
   systemd.services.dnscrypt-proxy2.serviceConfig = {
-    StateDirectory = "dnscrypt-proxy";
+    StateDirectory = lib.mkForce "dnscrypt-proxy2";
   };
 
 
@@ -228,13 +232,13 @@ in {
   };
   users.groups.configmanager = {
     name = "configmanager";
-  	members = ["blue"];
-  	gid = 1337;
+    members = [ "blue" ];
+    gid = 1337;
   };
   users.groups.plugdev = {
-  	name = "plugdev";
-  	members = ["blue"];
-  	gid = 990;
+    name = "plugdev";
+    members = [ "blue" ];
+    gid = 990;
   };
   users.defaultUserShell = pkgs.zsh;
 
@@ -252,7 +256,7 @@ in {
   # List packages installed in system profile. To search, run:
   # $ search wget
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     binutils
     rr
@@ -315,7 +319,7 @@ in {
   environment.binsh = "${pkgs.dash}/bin/dash";
 
   environment.gnome.excludePackages = with pkgs.gnome; [
-  	gnome-software
+    gnome-software
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -381,22 +385,23 @@ in {
   home-manager = {
     useGlobalPkgs = true;
     users = {
-      blue = import ./home/blue/home.nix {specialArgs = specialArgs;};
+      blue = import ./home/blue/home.nix { specialArgs = specialArgs; };
     };
   };
 
   services.flatpak = {
-  	enable = true;
-  	enable-debug = true;
-  	target-dir = "/var/lib/flatpak";
-  	remotes = {
-  	  "gnome-nightly" = "https://nightly.gnome.org/gnome-nightly.flatpakrepo";
-  	  "gradience-nightly" = "https://gradienceteam.github.io/Gradience/index.flatpakrepo";
-  	  "flathub" = "https://dl.flathub.org/repo/flathub.flatpakrepo";
-  	};
-  	packages = [
-  	  "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
-  	  "flathub:app/net.hovancik.Stretchly/x86_64/stable"
-  	];
+    enable = true;
+    enable-debug = true;
+    target-dir = "/var/lib/flatpak";
+    remotes = {
+      "gnome-nightly" = "https://nightly.gnome.org/gnome-nightly.flatpakrepo";
+      "gradience-nightly" = "https://gradienceteam.github.io/Gradience/index.flatpakrepo";
+      "flathub" = "https://dl.flathub.org/repo/flathub.flatpakrepo";
+    };
+    packages = [
+      "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
+      "flathub:app/net.hovancik.Stretchly/x86_64/stable"
+      "flathub:app/de.philippun1.turtle/x86_64/master"
+    ];
   };
 }

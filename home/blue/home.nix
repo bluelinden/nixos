@@ -18,6 +18,9 @@ in {
     gnome3.gnome-tweaks
     gnome.gnome-boxes
     cosmocc
+    # textpieces
+    fontforge
+    upkgs.lapce
     virt-viewer
     impression
     upkgs.beeper
@@ -62,6 +65,7 @@ in {
   
   home.sessionPath = [
     "$HOME/.bun/bin"
+    "$HOME/.local/share/npm-global/bin"
   ];
   home.sessionVariables = rec {
   	NIXOS_OZONE_WL = 1;
@@ -87,6 +91,9 @@ in {
     gh = {
       enable = true;
       package = upkgs.gh;
+      settings = {
+      	version = 1;
+      };
     };
     zsh = {
       enable = true;

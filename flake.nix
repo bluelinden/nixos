@@ -6,7 +6,7 @@
     };
     in {
       nixosConfigurations.boo = inputs.s-nixpkgs.lib.nixosSystem {
-        modules = [ ./configuration.nix inputs.lanzaboote.nixosModules.lanzaboote ];
+        modules = [ ./configuration.nix inputs.lanzaboote.nixosModules.lanzaboote inputs.nix-index-database.nixosModules.nix-index ];
         system = "x86_64-linux";
         specialArgs = { inputs = inputs; s-nixpkgs = custom-nixpkgs.stable; u-nixpkgs = custom-nixpkgs.unstable; };
       };
@@ -28,6 +28,9 @@
       owner = "thiagokokada";
       repo = "nix-alien";
     };
+
+    nix-index-database.url = "github:Mic92/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "u-nixpkgs";
     
     u-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     s-nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";

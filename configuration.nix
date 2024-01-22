@@ -9,6 +9,8 @@ let
   wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) { };
   webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) { };
   niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
+  distrobox-patched = upkgs.callPackage (import ./packages/distrobox/default.nix) { };
+  localwp = upkgs.callPackage (import ./packages/local/default.nix) { };
 in
 {
   imports =
@@ -17,6 +19,10 @@ in
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
       specialArgs.inputs.flatpaks.nixosModules.default
+      ./system/networking/dns.nix
+      ./system/networking/tailscale.nix
+      ./system/networking/base.nix
+      ./system/languages.nix
     ];
 
   # Allow unfree packages
@@ -78,50 +84,13 @@ in
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # Enable networking and tailscale
-  networking.networkmanager.enable = true;
-  services.resolved.enable = true;
-  # services.resolved.fallbackDns = [ "1.1.1.1" "10.18.81.24" "8.8.8.8" "9.9.9.9" ];
-  services.resolved.extraConfig = ''
-    
-  '';
 
-  networking.networkmanager.dns = lib.mkForce "systemd-resolved";
-  # networking.networkmanager.dns = lib.mkForce "default";
-  networking.nftables.enable = true;
-  networking.search = [ "skunk-ray.ts.net" ];
+
   # networking.nameservers = [ "127.0.0.1" ];
-  services.tailscale = {
-    enable = true;
-    package = upkgs.tailscale;
-    openFirewall = true;
-  };
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
 
-  # Set your time zone.
-  time.timeZone = "America/New_York";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
-  };
-
-  i18n.inputMethod = {
-    enabled = "ibus";
-    ibus.engines = with upkgs.ibus-engines; [ typing-booster ];
-  };
-
-
+  bluelinden.tailscale.enable = true;
+  bluelinden.dns.resolved.enable = true;
+  bluelinden.dns.encrypted.enable = true;
 
 
   # Enable the X11 windowing system.
@@ -166,31 +135,7 @@ in
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
-  services.dnscrypt-proxy2 = {
-    enable = true;
-    settings = {
-      ipv6_servers = true;
-      doh_servers = true;
-      require_dnssec = true;
-      bootstrap_resolvers = [ "9.9.9.9:53" "8.8.8.8:53" "10.18.81.24:53" ];
-      ignore_system_dns = true;
-      netprobe_address = "216.58.212.46:80";
-      sources.public-resolvers = {
-        urls = [
-          "https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md"
-          "https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md"
-        ];
-        cache_file = "/var/lib/dnscrypt-proxy2/public-resolvers.md";
-        minisign_key = "RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3";
-      };
-      # You can choose a specific set of servers from https://github.com/DNSCrypt/dnscrypt-resolvers/blob/master/v3/public-resolvers.md
-      # server_names = [ ... ];
-    };
-  };
 
-  systemd.services.dnscrypt-proxy2.serviceConfig = {
-    StateDirectory = lib.mkForce "dnscrypt-proxy2";
-  };
 
 
   # Enable sound with pipewire.
@@ -217,9 +162,13 @@ in
   };
 
   programs.dconf.enable = true;
+  programs.command-not-found.enable = false;
+  programs.nix-ld.enable = true;
   programs.virt-manager.enable = true;
   virtualisation.libvirtd.enable = true;
   virtualisation.libvirtd.qemu.swtpm.enable = true;
+  virtualisation.podman.enable = true;
+
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
@@ -242,15 +191,6 @@ in
   };
   users.defaultUserShell = pkgs.zsh;
 
-  systemd.user.services.ulauncher = {
-    enable = true;
-    description = "Start Ulauncher";
-    script = "${upkgs.ulauncher}/bin/ulauncher --hide-window";
-    documentation = [ "https://github.com/Ulauncher/Ulauncher/blob/f0905b9a9cabb342f9c29d0e9efd3ba4d0fa456e/contrib/systemd/ulauncher.service" ];
-    wantedBy = [ "graphical.target" "multi-user.target" ];
-    after = [ "display-manager.service" ];
-  };
-
 
 
   # List packages installed in system profile. To search, run:
@@ -266,12 +206,14 @@ in
     dconf2nix
     papirus-icon-theme
     gum
+    distrobox-patched
     sbctl
     upkgs.nodejs_21
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
-    bun
+    upkgs.bun
     hexedit
+    localwp
     comma
     libinput
     upkgs.deno
@@ -281,12 +223,16 @@ in
     opendrop
     owl
     asciinema
+    php81
+    php81Packages.composer
     stress
     s-tui
     upkgs.logseq
     nixpkgs-fmt
     gnome-network-displays
+    tree
     firmware-updater
+    dnsmasq
     neofetch
     fastfetch
     qemu
@@ -401,7 +347,7 @@ in
     packages = [
       "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
       "flathub:app/net.hovancik.Stretchly/x86_64/stable"
-      "flathub:app/de.philippun1.turtle/x86_64/master"
+      "flathub:app/io.missioncenter.MissionCenter/x86_64/stable"
     ];
   };
 }

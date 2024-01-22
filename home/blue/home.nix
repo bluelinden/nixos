@@ -12,19 +12,25 @@ in {
     upkgs.upscayl
     direnv
     thunderbird
+    floorp
     gay
     fractal
 #    upkgs.libresprite
     gnome3.gnome-tweaks
     gnome.gnome-boxes
     cosmocc
+    flyctl
     # textpieces
+    qpwgraph
+    zint
     fontforge
     upkgs.lapce
     virt-viewer
     impression
     upkgs.beeper
+    blender
     htop
+    upkgs.minecraft
     fraunces
     lexend
     upkgs.aseprite
@@ -33,6 +39,7 @@ in {
     emulsion-palette
     halftone
     safeeyes
+    dell-command-configure
     drawing
     ungoogled-chromium
     upkgs.anytype
@@ -59,8 +66,6 @@ in {
   	  terminal = true;
   	})
   ];
-  
-
   
   
   home.sessionPath = [
@@ -97,7 +102,9 @@ in {
     };
     zsh = {
       enable = true;
-      oh-my-zsh.enable = true;
+      # oh-my-zsh.enable = true;
+
+      
       plugins = [
       	{
           name = "powerlevel10k";
@@ -122,6 +129,7 @@ in {
       };
       profileExtra = ''
         if [ -e $HOME/.nix-profile/etc/profile.d/nix.sh ]; then . $HOME/.nix-profile/etc/profile.d/nix.sh; fi
+        source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
       '';
     };
   };

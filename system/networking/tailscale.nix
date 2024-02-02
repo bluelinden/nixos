@@ -30,7 +30,11 @@ in
   config =
     lib.mkIf cfg.enable {
       networking.search = cfg.domains;
-      # networking.nameservers = [ "127.0.0.1" ];
+      services.resolved.extraConfig = ''
+        [Resolve]
+        DNS=100.100.100.100
+        Domains=~skunk-ray.ts.net skunk-ray.ts.net
+      '';
       services.tailscale = {
         enable = true;
         package = pkgs.tailscale;
@@ -38,21 +42,6 @@ in
         interfaceName = cfg.interfaceName;
       };
 
-      systemd.services.resolved-patch = {
-        after = ["systemd-resolved.service"];
-        wantedBy = ["multi-user.target"];
-        serviceConfig = {
-          execStart = ''
-            resolvectl domain bluenet0 skunk-ray.ts.net
-            resolvectl dns bluenet0 100.100.100.100
-          '';
-        };
-      };
-
-      powerManagement.resumeCommands = ''
-        resolvectl domain bluenet0 skunk-ray.ts.net
-        resolvectl dns bluenet0 100.100.100.100
-      '';
       
       networking.firewall.trustedInterfaces = [ cfg.interfaceName ];
 

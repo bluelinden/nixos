@@ -11,6 +11,7 @@ let
   niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
   distrobox-patched = upkgs.callPackage (import ./packages/distrobox/default.nix) { };
   localwp = upkgs.callPackage (import ./packages/local/default.nix) { };
+  
 in
 {
   imports =
@@ -36,7 +37,7 @@ in
       enable = true;
       pkiBundle = "/etc/secureboot";
     };
-    crashDump.enable = true;
+    # crashDump.enable = true;
     initrd.verbose = false;
     consoleLogLevel = 0;
     kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
@@ -88,6 +89,8 @@ in
 
   # networking.nameservers = [ "127.0.0.1" ];
 
+  # networking.networkmanager.wifi.backend = "iwd";
+
   bluelinden.tailscale.enable = true;
   bluelinden.dns.resolved.enable = true;
   bluelinden.dns.encrypted.enable = true;
@@ -133,8 +136,13 @@ in
 
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
-
+  services.printing = {
+    enable = true;
+    browsing = true;
+    drivers = [
+      pkgs.canon-cups-ufr2
+    ];
+  };
 
 
 
@@ -142,9 +150,16 @@ in
   sound.enable = true;
   hardware.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
-  hardware.opengl.enable = true;
-  hardware.opengl.driSupport32Bit = false;
-  hardware.opengl.driSupport = true;
+  hardware.opengl = {
+  	driSupport32Bit = false;
+  	driSupport = true;
+  	extraPackages = with pkgs; [
+  	  intel-media-driver # LIBVA_DRIVER_NAME=iHD
+  	  vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+  	  vaapiVdpau
+  	  libvdpau-va-gl
+  	];
+  };
   security.rtkit.enable = true;
   security.apparmor.enable = true;
   security.audit.enable = false;
@@ -162,6 +177,8 @@ in
   };
 
   programs.dconf.enable = true;
+  programs.kdeconnect.enable = true;
+  programs.kdeconnect.package = pkgs.gnomeExtensions.gsconnect;
   programs.command-not-found.enable = false;
   programs.nix-ld.enable = true;
   programs.virt-manager.enable = true;
@@ -225,6 +242,7 @@ in
     asciinema
     php81
     php81Packages.composer
+    apple-cursor
     stress
     s-tui
     upkgs.logseq

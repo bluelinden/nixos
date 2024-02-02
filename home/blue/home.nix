@@ -1,5 +1,7 @@
 {specialArgs}: 
-let pkgs = specialArgs.s-nixpkgs; upkgs = specialArgs.u-nixpkgs;
+let pkgs = specialArgs.s-nixpkgs; upkgs = specialArgs.u-nixpkgs; 
+floorp-updated-bin = upkgs.callPackage (import ../../packages/floorp/default.nix) { };
+floorp-updated-wrapper = (import ../../packages/floorp/wrapper.nix);
 in {
   home.stateVersion = "23.05";
   home.packages = with pkgs; [
@@ -8,11 +10,12 @@ in {
     gnome.ghex
     gnome.gnome-terminal
     gnome.gitg
-    upkgs.firefox
+    firefox-bin
     upkgs.upscayl
     direnv
+    soundux
     thunderbird
-    floorp
+    (pkgs.wrapFirefox floorp-updated-bin {})
     gay
     fractal
 #    upkgs.libresprite
@@ -22,12 +25,15 @@ in {
     flyctl
     # textpieces
     qpwgraph
+    helvum
     zint
     fontforge
     upkgs.lapce
     virt-viewer
     impression
     upkgs.beeper
+    easyeffects
+    
     blender
     htop
     upkgs.minecraft
@@ -55,6 +61,7 @@ in {
     gnomeExtensions.tailscale-qs
     gnomeExtensions.caffeine
     gnomeExtensions.just-perfection
+    gnomeExtensions.easyeffects-preset-selector
     # gnomeExtensions.paperwm
     gnomeExtensions.compiz-windows-effect
   	(makeDesktopItem {
@@ -69,7 +76,7 @@ in {
   
   
   home.sessionPath = [
-    "$HOME/.bun/bin"
+    "$HOME/.cache/.bun/bin"
     "$HOME/.local/share/npm-global/bin"
   ];
   home.sessionVariables = rec {

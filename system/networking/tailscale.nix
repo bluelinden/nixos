@@ -29,19 +29,20 @@ in
   };
   config =
     lib.mkIf cfg.enable {
-      networking.search = cfg.domains;
-      services.resolved.extraConfig = ''
-        [Resolve]
-        DNS=100.100.100.100
-        Domains=~skunk-ray.ts.net skunk-ray.ts.net
-      '';
+      networking.search = if (builtins.isList cfg.domains) then cfg.domains else [ "skunk-ray.ts.net" ];
+      networking.extraHosts = (import ./hosts.nix).hosts;
+      # services.resolved.extraConfig = ''
+        # [Resolve]
+        # DNS=100.100.100.100
+        # Domains=~skunk-ray.ts.net skunk-ray.ts.net
+      # '';
       services.tailscale = {
         enable = true;
         package = pkgs.tailscale;
         openFirewall = true;
         interfaceName = cfg.interfaceName;
       };
-
+      
       
       networking.firewall.trustedInterfaces = [ cfg.interfaceName ];
 

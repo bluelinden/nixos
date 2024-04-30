@@ -27,6 +27,7 @@ in
             ipv6_servers = true;
             doh_servers = true;
             require_dnssec = true;
+            listen_addresses = ["127.0.0.1:53"];
             bootstrap_resolvers = [ "9.9.9.9:53" "8.8.8.8:53" "10.18.81.24:53" ];
             ignore_system_dns = true;
             netprobe_address = "216.58.212.46:80";
@@ -42,7 +43,12 @@ in
             # server_names = [ ... ];
           };
         };
-      services.resolved = lib.mkIf cfg.resolved.enable {enable = true;};
+      services.resolved = lib.mkIf cfg.resolved.enable {
+        enable = true;
+        extraConfig = ''
+          DNSStubListenerExtra=172.0.0.55
+        '';
+      };
       networking.networkmanager.dns = lib.mkIf cfg.resolved.enable "systemd-resolved";
 
       systemd.services.dnscrypt-proxy2.serviceConfig = lib.mkIf cfg.encrypted.enable {

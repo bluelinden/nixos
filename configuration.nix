@@ -8,10 +8,11 @@ let
   upkgs = specialArgs.u-nixpkgs;
   wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) { };
   webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) { };
-  niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
+  # niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
   distrobox-patched = upkgs.callPackage (import ./packages/distrobox/default.nix) { };
   localwp = upkgs.callPackage (import ./packages/local/default.nix) { };
-  
+  catppuccin-plymouth = upkgs.callPackage (import ./packages/catppuccin-plymouth/default.nix) { variant = "frappe"; };
+  fenix = specialArgs.inputs.fenix;
 in
 {
   imports =
@@ -24,10 +25,15 @@ in
       ./system/networking/tailscale.nix
       ./system/networking/base.nix
       ./system/languages.nix
+      ./system/utils/ydotool.nix
     ];
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
+
+  # nixpkgs.overlays = [ fenix.overlays.default ];
+
+  # system.copySystemConfiguration = true;
 
 
   # Bootloader.
@@ -38,9 +44,9 @@ in
       pkiBundle = "/etc/secureboot";
     };
     # crashDump.enable = true;
-    initrd.verbose = false;
-    consoleLogLevel = 0;
-    kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
+    # initrd.verbose = false;
+    # consoleLogLevel = 0;
+    # kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
     initrd.systemd.enable = true;
     initrd.kernelModules = [ "tpm-tis" "i915" ];
 
@@ -50,20 +56,26 @@ in
     loader.timeout = 0;
     loader.systemd-boot.editor = false;
     loader.grub.memtest86.enable = false;
-    loader.grub.device = "/dev/sda";
-    loader.grub.efiSupport = true;
-    loader.grub.fontSize = 16;
+    # loader.grub.device = "/dev/sda";
+    # loader.grub.efiSupport = true;
+    # loader.grub.fontSize = 16;
 
     loader.grub.enable = false;
-    loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
-    loader.grub.backgroundColor = "#4b1128";
-    plymouth.enable = true;
-    plymouth.themePackages = [ pkgs.nixos-bgrt-plymouth ];
-    plymouth.theme = "nixos-bgrt";
+    # loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
+    # loader.grub.backgroundColor = "#4b1128";
+    plymouth.enable = false;
+    plymouth.themePackages = [ catppuccin-plymouth ];
+    plymouth.theme = "catppuccin-frappe";
     loader.systemd-boot.configurationLimit = 30;
     loader.efi.canTouchEfiVariables = true;
     bootspec.enable = true;
+
+    binfmt.emulatedSystems = [ "aarch64-linux" ];
   };
+
+  services.ddccontrol.enable = true;
+  hardware.i2c.enable = true;
+  hardware.xpadneo.enable = true;
 
   services.kmscon = {
     enable = true;
@@ -134,6 +146,8 @@ in
     EVDEV_ABS_36=::23
   '';
 
+  services.gnome.gnome-browser-connector.enable = true;
+
 
   # Enable CUPS to print documents.
   services.printing = {
@@ -151,17 +165,32 @@ in
   hardware.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
   hardware.opengl = {
-  	driSupport32Bit = false;
-  	driSupport = true;
-  	extraPackages = with pkgs; [
-  	  intel-media-driver # LIBVA_DRIVER_NAME=iHD
-  	  vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-  	  vaapiVdpau
-  	  libvdpau-va-gl
-  	];
+    # driSupport32Bit = false;
+    driSupport = true;
+    extraPackages = with pkgs; [
+      intel-media-driver # LIBVA_DRIVER_NAME=iHD
+      intel-vaapi-driver
+      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      vaapiVdpau
+      libvdpau-va-gl
+    ];
   };
   security.rtkit.enable = true;
+  security.sudo-rs = {
+    enable = true;
+
+  };
+  security.pam.services.login.googleAuthenticator.enable = true;
   security.apparmor.enable = true;
+  security.apparmor.policies.dummy.profile = ''
+    /dummy {
+    }
+  '';
+  networking.firewall.extraCommands = ''
+    iptables -t nat -A OUTPUT -d 240.0.0.53 -j DNAT --to-destination 127.0.0.1
+  '';
+
+
   security.audit.enable = false;
   services.pipewire = {
     enable = true;
@@ -177,14 +206,63 @@ in
   };
 
   programs.dconf.enable = true;
+  services.ydotool.enable = true;
+  hardware.uinput.enable = true;
   programs.kdeconnect.enable = true;
   programs.kdeconnect.package = pkgs.gnomeExtensions.gsconnect;
   programs.command-not-found.enable = false;
   programs.nix-ld.enable = true;
   programs.virt-manager.enable = true;
-  virtualisation.libvirtd.enable = true;
-  virtualisation.libvirtd.qemu.swtpm.enable = true;
-  virtualisation.podman.enable = true;
+  virtualisation = {
+    libvirtd.enable = true;
+    # virtualisation.docker.enable = true;
+    # virtualisation.docker.rootless.enable = true;
+    # virtualisation.docker.rootless.daemon.settings = {
+    # dns = ["127.0.0.1"];
+    # };
+    # virtualisation.docker.rootless.setSocketVariable = true;
+    libvirtd.qemu.swtpm.enable = true;
+    podman = {
+      enable = true;
+      # dockerCompat = true;
+      # Required for containers under podman-compose to be able to talk to each other.
+      defaultNetwork.settings.dns_enabled = true;
+      # dockerSocket.enable = true;
+      extraPackages = [ pkgs.zfs ];
+    };
+    docker = {
+      rootless = {
+        enable = true;
+        setSocketVariable = true;
+        daemon.settings = {
+          dns = [ "240.0.0.53" ];
+        };
+      };
+    };
+    containers.enable = true;
+    containers.storage.settings = {
+      storage = {
+        driver = "overlay";
+        runroot = "/run/containers/storage";
+        graphroot = "/var/lib/containers/storage";
+        rootless_storage_path = "$XDG_DATA_HOME/containers";
+        options.overlay.mountopt = "nodev,metacopy=on";
+      };
+    };
+    oci-containers.backend = "docker";
+  };
+
+
+
+  programs.steam.gamescopeSession.enable = true;
+  programs.steam.enable = true;
+
+  # environment.extraInit = ''
+  # if [ -z "$DOCKER_HOST" -a -n "$XDG_RUNTIME_DIR" ]; then
+  # export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+  # fi
+  # '';
+
 
 
   # Enable touchpad support (enabled default in most desktopManager).
@@ -194,13 +272,16 @@ in
   users.users.blue = {
     isNormalUser = true;
     description = "blue linden";
-    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "libvirtd" ];
+    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" ];
   };
   users.groups.configmanager = {
     name = "configmanager";
     members = [ "blue" ];
     gid = 1337;
   };
+
+  users.groups.ddc = { };
+
   users.groups.plugdev = {
     name = "plugdev";
     members = [ "blue" ];
@@ -222,6 +303,7 @@ in
     openjdk17
     dconf2nix
     papirus-icon-theme
+    upkgs.morewaita-icon-theme
     gum
     distrobox-patched
     sbctl
@@ -229,25 +311,34 @@ in
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
     upkgs.bun
+    colmena
+    mkcert
     hexedit
-    localwp
+    screen
+    # localwp
     comma
     libinput
+    pipx
     upkgs.deno
     tpm2-tss
     upkgs.ulauncher
     upkgs.adw-gtk3
     opendrop
     owl
+    google-authenticator
     asciinema
+    d-spy
     php81
     php81Packages.composer
     apple-cursor
     stress
     s-tui
+    nixd
     upkgs.logseq
     nixpkgs-fmt
     gnome-network-displays
+    python3
+    linuxHeaders
     tree
     firmware-updater
     dnsmasq
@@ -257,30 +348,95 @@ in
     unzip
     gnumake
     inkscape
+    pkg-config
+    cairo
     dig
     git-lfs
-    upkgs.vscode.fhs
+    # docker-compose
+    podman-compose
+    # upkgs.vscode.fhs
     webusb-udev
     pciutils
     usbutils
     gparted
     steam-run
     maturin
+    slirp4netns
     libimobiledevice
     idevicerestore
     ifuse
-    niri
+    upkgs.niri
     clang
+    curlFull
+    ddcui
+    ddcutil
+    ddccontrol-db
+    mosh
+    openssl
+    openssl.dev
+    perl
+
+    cachix
+
+    # rust toolchain
+    (fenix.packages.x86_64-linux.stable.completeToolchain)
+    rust-analyzer
+
+    # rev-eng stuff
+    e2fsprogs
+    jefferson
+    pigz
+    mtdutils
+    _7zz
+    python311Packages.bincopy
+    binwalk
+    sasquatch
+    zip
+    unar
+    ghidra
+    python311Packages.python-lzo
+    arp-scan
+    nmap
+    rustscan
+    nmapsi4
+
+    protobuf
+    llvmPackages.libclang
+    llvm
+    llvmPackages.bintools
+    clang
+    llvmPackages.clangUseLLVM
+    rust-bindgen
+    upkgs.devenv
+
     # python310Full
     # python310Packages.pip
     # python310Packages.setuptools
     nix-init
+    upkgs.mission-center
     # wscribe
     specialArgs.inputs.nix-software-center.packages.${system}.nix-software-center
     specialArgs.inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
     specialArgs.inputs.nix-alien.packages.${system}.nix-alien
   ];
   environment.binsh = "${pkgs.dash}/bin/dash";
+
+  programs.direnv.enable = true;
+
+  environment.variables = {
+    LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+    BINDGEN_EXTRA_CLANG_ARGS = ((builtins.map (a: ''-I"${a}/include"'') [
+      # add dev libraries here (e.g. pkgs.libvmi.dev)
+      pkgs.glibc.dev
+    ])
+    # Includes with special directory paths
+    ++ [
+      ''-I"${pkgs.llvmPackages_latest.libclang.lib}/lib/clang/${pkgs.llvmPackages_latest.libclang.version}/include"''
+      ''-I"${pkgs.glib.dev}/include/glib-2.0"''
+      ''-I${pkgs.glib.out}/lib/glib-2.0/include/''
+    ]);
+    PKG_CONFIG_PATH = ''${pkgs.systemd.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig'';
+  };
 
   environment.gnome.excludePackages = with pkgs.gnome; [
     gnome-software
@@ -345,6 +501,20 @@ in
     "d /cfg 1774 root configmanager"
   ];
 
+
+
+  systemd.user.services.docker-port-forwarder = {
+    description = "Docker Port Forwarder Service";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "docker.service" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = (pkgs.writeShellScript "dpf.sh" (builtins.readFile ./docker-port-forwarder.sh)) + " 53:53";
+      Restart = "always";
+    };
+  };
+
+
   # home manager config!
   home-manager = {
     useGlobalPkgs = true;
@@ -366,6 +536,23 @@ in
       "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
       "flathub:app/net.hovancik.Stretchly/x86_64/stable"
       "flathub:app/io.missioncenter.MissionCenter/x86_64/stable"
+      "flathub:app/io.podman_desktop.PodmanDesktop/x86_64/stable"
+      "flathub:app/net.mkiol.SpeechNote/x86_64/stable"
+      "flathub:app/com.github.tchx84.Flatseal/x86_64/stable"
+      "flathub:app/org.gnome.Decibels/x86_64/stable"
     ];
   };
+
+
+  fonts = {
+    fontDir.enable = true;
+    packages = [
+      pkgs.joypixels
+    ];
+    fontconfig.defaultFonts.emoji = [
+      "JoyPixels"
+    ];
+  };
+
+
 }

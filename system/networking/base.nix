@@ -5,5 +5,5 @@
   # networking.networkmanager.wifi.backend = "iwd";
 
   # networking.networkmanager.dns = lib.mkForce "default";
-  networking.nftables.enable = true;
+  # networking.nftables.enable = true;
 }

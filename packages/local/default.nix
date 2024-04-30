@@ -51,9 +51,7 @@ in stdenv.mkDerivation {
     libaio
   ];
 
-  unpackPhase = "true";
-
-  
+  # unpackPhase = "true";
 
   # Extract and copy executable in $out/bin
   installPhase = ''

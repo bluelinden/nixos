@@ -6,6 +6,7 @@
 , stdenv
 , wayland
 , xorg
+, xcb-util-cursor
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -19,7 +20,9 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-dwF9nI54a6Fo9XU5s4qmvMXSgCid3YQVGxch00qEMvI=";
   };
 
-  cargoHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  cargoHash = "sha256-nKPSkHbh73xKWNpN/OpDmLnVmA3uygs3a+ejOhwU3yA==";
+
+  doCheck = false;
 
   nativeBuildInputs = [
     pkg-config
@@ -31,6 +34,7 @@ rustPlatform.buildRustPackage rec {
   ] ++ lib.optionals stdenv.isLinux [
     wayland
     xorg.libxcb
+    xcb-util-cursor
   ];
 
   meta = with lib; {

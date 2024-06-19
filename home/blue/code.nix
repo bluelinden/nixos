@@ -5,11 +5,12 @@
   package = upkgs.vscodium;
   extensions = with extensions."x86_64-linux".vscode-marketplace; [
     aaron-bond.better-comments
-    activitywatch.aw-watcher-vscode
-    adrianwilczynski.alpine-js-intellisense
+    # activitywatch.aw-watcher-vscode
+    # adrianwilczynski.alpine-js-intellisense
     andrejunges.handlebars
     ardenivanov.svelte-intellisense
     arrterian.nix-env-selector
+    astro-build.astro-vscode
     bbenoist.nix
     beardedbear.beardedicons
     bierner.markdown-mermaid
@@ -21,6 +22,7 @@
     catppuccin.catppuccin-vsc-pack
     ccy.ayu-adaptive
     championswimmer.quieter-dark-color-theme
+    ckolkman.vscode-postgres
     codezombiech.gitignore
     coolbear.systemd-unit-file
     csilva2810.rose-pine-next
@@ -40,12 +42,13 @@
     esbenp.prettier-vscode
     fivethree.vscode-svelte-snippets
     gencer.html-slim-scss-css-class-completion
+    # gengjiawen.vscode-wasm
     github.remotehub
     github.vscode-github-actions
     github.vscode-pull-request-github
     gleam.gleam
     helixquar.asciidecorator
-    icrawl.discord-vscode
+    # icrawl.discord-vscode
     ikenshu.rose-noctis
     jnoortheen.nix-ide
     lehwark.htmx-literals
@@ -86,6 +89,7 @@
     redhat.vscode-yaml
     rust-lang.rust-analyzer
     serayuzgur.crates
+    # RobertOstermann.vscode-sqlfluff
     stylelint.vscode-stylelint
     surrealdb.surrealql
     svelte.svelte-vscode
@@ -109,5 +113,6 @@
     yandeu.five-server
     yoavbls.pretty-ts-errors
     zguolee.tabler-icons
+    eww-yuck.yuck
   ];
 }

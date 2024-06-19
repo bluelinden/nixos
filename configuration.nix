@@ -6,13 +6,11 @@
 let
   pkgs = specialArgs.s-nixpkgs;
   upkgs = specialArgs.u-nixpkgs;
-  wscribe = upkgs.callPackage (import ./packages/wscribe/default.nix) { };
-  webusb-udev = upkgs.callPackage (import ./packages/webusb-udev/default.nix) { };
-  # niri = upkgs.callPackage (import ./packages/niri/default.nix) { };
-  distrobox-patched = upkgs.callPackage (import ./packages/distrobox/default.nix) { };
-  localwp = upkgs.callPackage (import ./packages/local/default.nix) { };
-  catppuccin-plymouth = upkgs.callPackage (import ./packages/catppuccin-plymouth/default.nix) { variant = "frappe"; };
+  webusb-udev = upkgs.callPackage ./packages/webusb-udev/default.nix { };
+  distrobox-patched = upkgs.callPackage ./packages/distrobox/default.nix { };
   fenix = specialArgs.inputs.fenix;
+  niri = specialArgs.inputs.niri;
+  stylix = specialArgs.inputs.stylix;
 in
 {
   imports =
@@ -21,6 +19,7 @@ in
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
       specialArgs.inputs.flatpaks.nixosModules.default
+      stylix.nixosModules.stylix
       ./system/networking/dns.nix
       ./system/networking/tailscale.nix
       ./system/networking/base.nix
@@ -31,10 +30,9 @@ in
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # nixpkgs.overlays = [ fenix.overlays.default ];
+  nixpkgs.overlays = [ niri.overlays.niri ];
 
   # system.copySystemConfiguration = true;
-
 
   # Bootloader.
   boot = {
@@ -50,8 +48,9 @@ in
     initrd.systemd.enable = true;
     initrd.kernelModules = [ "tpm-tis" "i915" ];
 
-    initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
+    # initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
     kernelPackages = upkgs.linuxPackages_xanmod_latest;
+    extraModulePackages = with config.boot.kernelPackages; [ digimend ];
     loader.systemd-boot.graceful = true;
     loader.timeout = 0;
     loader.systemd-boot.editor = false;
@@ -64,10 +63,9 @@ in
     # loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
     # loader.grub.backgroundColor = "#4b1128";
     plymouth.enable = false;
-    plymouth.themePackages = [ catppuccin-plymouth ];
-    plymouth.theme = "catppuccin-frappe";
     loader.systemd-boot.configurationLimit = 30;
     loader.efi.canTouchEfiVariables = true;
+    kernel.sysctl."kernel.sysrq" = 96;
     bootspec.enable = true;
 
     binfmt.emulatedSystems = [ "aarch64-linux" ];
@@ -76,6 +74,8 @@ in
   services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
   hardware.xpadneo.enable = true;
+  hardware.xone.enable = true;
+  hardware.cpu.intel.updateMicrocode = true;
 
   services.kmscon = {
     enable = true;
@@ -111,12 +111,11 @@ in
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
-    layout = "us";
-    xkbVariant = "";
+    xkb.layout = "us";
+    xkb.variant = "";
     desktopManager = {
       gnome.enable = true;
     };
-
     displayManager = {
       gdm = {
         enable = true;
@@ -124,13 +123,16 @@ in
         banner = ''
           this computer is the property of blue linden. 
         '';
-
       };
-      # sessionPackages = [ niri ];
-      autoLogin.enable = false;
     };
+
   };
   services.tlp.enable = false;
+
+  services.displayManager = {
+    autoLogin.enable = false;
+  };
+
 
   services.usbmuxd = {
     enable = true;
@@ -144,6 +146,11 @@ in
     EVDEV_ABS_01=::23
     EVDEV_ABS_35=::24
     EVDEV_ABS_36=::23
+  '';
+
+  services.udev.extraRules = ''
+    KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+    ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="intel_backlight", MODE="0666", RUN+="${pkgs.coreutils}/bin/chmod a+w /sys/class/backlight/intel_backlight/brightness"
   '';
 
   services.gnome.gnome-browser-connector.enable = true;
@@ -181,6 +188,7 @@ in
 
   };
   security.pam.services.login.googleAuthenticator.enable = true;
+  security.pam.services.swaylock.googleAuthenticator.enable = true;
   security.apparmor.enable = true;
   security.apparmor.policies.dummy.profile = ''
     /dummy {
@@ -224,10 +232,10 @@ in
     libvirtd.qemu.swtpm.enable = true;
     podman = {
       enable = true;
-      # dockerCompat = true;
+      dockerCompat = true;
       # Required for containers under podman-compose to be able to talk to each other.
       defaultNetwork.settings.dns_enabled = true;
-      # dockerSocket.enable = true;
+      dockerSocket.enable = true;
       extraPackages = [ pkgs.zfs ];
     };
     docker = {
@@ -253,9 +261,10 @@ in
   };
 
 
-
-  programs.steam.gamescopeSession.enable = true;
+  # jovian steam creates a gamescope session
+  # jovian.steam.enable = true;
   programs.steam.enable = true;
+  programs.gamemode.enable = true;
 
   # environment.extraInit = ''
   # if [ -z "$DOCKER_HOST" -a -n "$XDG_RUNTIME_DIR" ]; then
@@ -273,6 +282,7 @@ in
     isNormalUser = true;
     description = "blue linden";
     extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" ];
+    shell = pkgs.nushell;
   };
   users.groups.configmanager = {
     name = "configmanager";
@@ -307,7 +317,7 @@ in
     gum
     distrobox-patched
     sbctl
-    upkgs.nodejs_21
+    upkgs.nodejs_22
     upkgs.nodePackages_latest.pnpm
     upkgs.yarn
     upkgs.bun
@@ -379,7 +389,7 @@ in
     cachix
 
     # rust toolchain
-    (fenix.packages.x86_64-linux.stable.completeToolchain)
+    (fenix.packages.x86_64-linux.complete.toolchain)
     rust-analyzer
 
     # rev-eng stuff
@@ -423,8 +433,13 @@ in
 
   programs.direnv.enable = true;
 
-  environment.variables = {
+  environment.sessionVariables = {
     LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+    NIXOS_OZONE_WL = 1;
+    XDG_CACHE_HOME = "$HOME/.cache";
+    XDG_CONFIG_HOME = "$HOME/.config";
+    XDG_DATA_HOME = "$HOME/.local/share";
+    XDG_STATE_HOME = "$HOME/.local/state";
     BINDGEN_EXTRA_CLANG_ARGS = ((builtins.map (a: ''-I"${a}/include"'') [
       # add dev libraries here (e.g. pkgs.libvmi.dev)
       pkgs.glibc.dev
@@ -479,6 +494,7 @@ in
     min-free = ${toString (5 * 1024 * 1024 * 1024)}
     max-free = ${toString (15 * 1024 * 1024 * 1024)}
   '';
+
   appstream.enable = true;
   programs.zsh.zsh-autoenv.enable = true;
   programs.zsh.enable = true;
@@ -519,8 +535,10 @@ in
   home-manager = {
     useGlobalPkgs = true;
     users = {
-      blue = import ./home/blue/home.nix { specialArgs = specialArgs; };
+      blue = import ./home/blue/home.nix;
     };
+    extraSpecialArgs = specialArgs;
+    useUserPackages = true;
   };
 
   services.flatpak = {
@@ -552,6 +570,38 @@ in
     fontconfig.defaultFonts.emoji = [
       "JoyPixels"
     ];
+  };
+
+  stylix = {
+    enable = true;
+    image = ./photos/verge-rainbow-panels.jpeg;
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
+    fonts = {
+      serif = {
+        package = pkgs.fraunces;
+        name = "Fraunces";
+      };
+
+      sansSerif = {
+        package = pkgs.inter;
+        name = "Inter";
+      };
+
+      monospace = {
+        package = pkgs.nerdfonts;
+        name = "CommitMono Nerd Font";
+      };
+
+      emoji = {
+        package = pkgs.joypixels;
+        name = "JoyPixels";
+      };
+    };
+    cursor = {
+      package = pkgs.google-cursor;
+      name = "GoogleDot-Black";
+      size = 24;
+    };
   };
 
 

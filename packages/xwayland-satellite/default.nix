@@ -7,6 +7,7 @@
 , wayland
 , xorg
 , xcb-util-cursor
+, ...
 }:
 
 rustPlatform.buildRustPackage rec {

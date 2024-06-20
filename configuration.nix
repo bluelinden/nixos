@@ -127,6 +127,8 @@ in
     };
 
   };
+
+
   services.tlp.enable = false;
 
   services.displayManager = {
@@ -188,7 +190,7 @@ in
 
   };
   security.pam.services.login.googleAuthenticator.enable = true;
-  security.pam.services.swaylock.googleAuthenticator.enable = true;
+  security.pam.services.hyprlock.googleAuthenticator.enable = true;
   security.apparmor.enable = true;
   security.apparmor.policies.dummy.profile = ''
     /dummy {
@@ -375,7 +377,6 @@ in
     libimobiledevice
     idevicerestore
     ifuse
-    upkgs.niri
     clang
     curlFull
     ddcui

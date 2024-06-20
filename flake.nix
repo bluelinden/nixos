@@ -1,7 +1,7 @@
 {
   outputs = inputs:
     let
-      custom-nixpkgs = rec {
+      custom-nixpkgs = {
         unstable = import inputs.u-nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; config.permittedInsecurePackages = [ "electron-25.9.0" "pulsar-1.114.0" ]; };
         stable = import inputs.s-nixpkgs {
           system = "x86_64-linux";

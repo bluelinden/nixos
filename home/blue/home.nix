@@ -14,6 +14,7 @@ in
   home.stateVersion = "23.05";
   home.packages = with pkgs; [
     xwayland-satellite
+    gtklock
     activitywatch
     gnome.dconf-editor
     gnome.gnome-sound-recorder
@@ -51,6 +52,7 @@ in
     lame
     zoxide
     # pulsar
+    wayfarer
     nnn
     zellij
     ffmpeg
@@ -73,6 +75,7 @@ in
     blender
     olive-editor
     lmms
+    looking-glass-client
     upkgs.warp-terminal
     htop
     # upkgs.minecraft
@@ -296,6 +299,8 @@ in
     };
 
     niri = {
+      # enable = true;
+      # package = pkgs.niri-unstable;
       settings = {
         input = {
           keyboard = {
@@ -330,9 +335,10 @@ in
           # basics
           "Mod+Shift+Slash".action = show-hotkey-overlay;
           "Mod+T".action = spawn "${pkgs.alacritty}/bin/alacritty";
-          "Mod+Space".action = spawn "${pkgs.tofi}/bin/tofi-drun" "--drun-launch=true";
+          "Mod+Space".action = spawn "${pkgs.tofi}/bin/tofi-drun" "--drun-launch=true" "--fuzzy-match=true";
           "Mod+Alt+Space".action = spawn "${pkgs.tofi}/bin/tofi-run";
-          "Super+L".action = spawn "${pkgs.swaylock}/bin/swaylock";
+          # the hyprland community is toxic as hell but this is also the only thing that works w/ 2fa
+          "Super+L".action = spawn "${pkgs.hyprlock}/bin/hyprlock";
 
 
           # pipewire audio stuff
@@ -407,9 +413,21 @@ in
           "Mod+Shift+P".action = power-off-monitors;
 
         };
+        hotkey-overlay.skip-at-startup = true;
         environment = {
           DISPLAY = ":13";
         };
+        window-rules = [
+          {
+            geometry-corner-radius = {
+              bottom-left = 12.;
+                bottom-right = 12.;
+              top-left = 12.;
+                top-right = 12.;
+            };
+            clip-to-geometry = true;
+          }
+        ];
         spawn-at-startup = [
           {
             command = [ "${xwayland-satellite}/bin/xwayland-satellite" ":13" ];
@@ -427,8 +445,44 @@ in
 
     };
 
-    swaylock = {
+    hyprlock = {
       enable = true;
+      settings = {
+        general = {
+          disable_loading_bar = true;
+          hide_cursor = true;
+          grace = 300;
+          ignore_empty_input = true;
+        };
+
+        background = [{
+          monitor = "";
+          color = "#000";
+        }];
+
+        input-field = [{
+          size = "300, 50";
+          outline_thickness = 0;
+          dots_size = 0.33;
+          outer_color = "#000";
+          inner_color = "#000";
+          font_color = "#fff";
+          placeholder_text = "$PROMPT";
+          hide_input = true;
+
+          check_color = "#888";
+          fail_color = "#822";
+          fail_transition = 50;
+          swap_font_color = true;
+
+          halign = "left";
+          valign = "bottom";
+
+        }];
+
+
+
+      };
     };
 
     wpaperd = {

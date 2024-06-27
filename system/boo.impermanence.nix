@@ -25,7 +25,7 @@
     {
       device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
-      options = [ "subvol=config" ];
+      options = [ "subvol=config" "noatime" "compress=zstd" ];
     };
 
   # fileSystems."/home" =
@@ -40,13 +40,13 @@
       device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
       neededForBoot = true;
-      options = [ "subvol=store" ];
+      options = [ "subvol=store" "noatime" "compress=zstd" ];
     };
 
   fileSystems."/swap" =
     {
       device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
-      options = [ "subvol=swap" ];
+      options = [ "subvol=swap" "noatime" "compress=zstd" ];
     };
 }

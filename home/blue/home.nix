@@ -23,6 +23,7 @@ in
     gnome.gitg
     bottles
     firefox-bin
+    zed-editor
     # upkgs.upscayl
     direnv
 
@@ -45,14 +46,14 @@ in
     handbrake
     fontforge
     upkgs.lapce
-    rustup
+    # rustup
     qmk
     vial
     binwalk
     lame
     zoxide
     # pulsar
-    wayfarer
+    kooha
     nnn
     zellij
     ffmpeg
@@ -60,6 +61,9 @@ in
     sox
     virt-viewer
     impression
+    overskride
+    # networkmanagerapplet
+    cosmic-applets
     upkgs.beeper
     easyeffects
     metasploit
@@ -77,7 +81,8 @@ in
     lmms
     looking-glass-client
     upkgs.warp-terminal
-    htop
+
+    pamixer
     # upkgs.minecraft
     upkgs.prismlauncher
     gnome.iagno
@@ -102,6 +107,7 @@ in
     drawing
     ungoogled-chromium
     upkgs.anytype
+    networkmanagerapplet
     (vivaldi.override {
       commandLineArgs = [
         "--enable-features=UseOzonePlatform"
@@ -134,15 +140,26 @@ in
       terminal = true;
     })
     (writeShellScriptBin "npb" ''
-      	  if [ "$#" -ne 2 ]; then
-      	    echo "quickie Nix Package Build script by blue linden"
-      	    echo "Usage: npb [method] [filePath]"
-      	    exit 1
-      	  fi
-      	  arg1=$1
-      	  arg2=$2
-      	  nix-build -E "with import <nixpkgs> {}; $arg1 $arg2 {}"
-      	'')
+      if [ "$#" -ne 2 ]; then
+        echo "quickie Nix Package Build script by blue linden"
+        echo "Usage: npb [method] [filePath]"
+        exit 1
+      fi
+      arg1=$1
+      arg2=$2
+      nix-build -E "with import <nixpkgs> {}; $arg1 $arg2 {}"
+    '')
+    (writeShellScriptBin "ewwdev" ''
+      pidof eww && pkill eww
+      ACT=$1
+      shift 1
+      eww $ACT --config /cfg/home/blue/eww/ "$@"
+
+    '')
+
+    (writeShellScriptBin "run" ''
+      niri msg action spawn -- "$@"
+    '')
   ];
 
 
@@ -330,20 +347,23 @@ in
             { proportion = 2. / 3.; }
             { proportion = 1. / 1.; }
           ];
+          gaps = 12;
+          struts = {
+            left = 66;
+          };
         };
         binds = with config.lib.niri.actions; {
           # basics
           "Mod+Shift+Slash".action = show-hotkey-overlay;
           "Mod+T".action = spawn "${pkgs.alacritty}/bin/alacritty";
-          "Mod+Space".action = spawn "${pkgs.tofi}/bin/tofi-drun" "--drun-launch=true" "--fuzzy-match=true";
-          "Mod+Alt+Space".action = spawn "${pkgs.tofi}/bin/tofi-run";
-          # the hyprland community is toxic as hell but this is also the only thing that works w/ 2fa
-          "Super+L".action = spawn "${pkgs.hyprlock}/bin/hyprlock";
+          "Mod+Space".action = spawn "${pkgs.dash}/bin/dash" "-c" "$(${pkgs.tofi}/bin/tofi-drun --fuzzy-match=true)";
+          "Mod+Alt+Space".action = spawn "${pkgs.dash}/bin/dash" "-c" "$(${pkgs.tofi}/bin/tofi-run)";
+          "Super+L".action = spawn "${pkgs.systemd}/bin/loginctl" "lock-session";
 
 
           # pipewire audio stuff
-          "XF86AudioRaiseVolume" = { action.spawn = [ "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1+" ]; allow-when-locked = true; };
-          "XF86AudioLowerVolume" = { action.spawn = [ "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1-" ]; allow-when-locked = true; };
+          "XF86AudioRaiseVolume" = { action.spawn = [ "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05+" ]; allow-when-locked = true; };
+          "XF86AudioLowerVolume" = { action.spawn = [ "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05-" ]; allow-when-locked = true; };
           "XF86AudioMute" = { action.spawn = [ "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle" ]; allow-when-locked = true; };
           "XF86AudioMicMute" = { action.spawn = [ "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle" ]; allow-when-locked = true; };
 
@@ -437,10 +457,24 @@ in
           }
           {
             command = [ "${pkgs.wpaperd}/bin/wpaperd" "-d" ];
-
+          }
+          {
+            command = [ "${pkgs.eww}/bin/eww" "daemon" ];
+          }
+          {
+            command = [ "${pkgs.eww}/bin/eww" "open" "bluebar" ];
           }
         ];
+        outputs = {
+          "eDP-1" = {
+            scale = 1.0;
+          };
+
+        };
+        prefer-no-csd = true;
       };
+
+
 
 
     };
@@ -457,25 +491,27 @@ in
 
         background = [{
           monitor = "";
-          color = "#000";
+          color = "rgba(0, 0, 0, 1)";
         }];
 
         input-field = [{
-          size = "300, 50";
+          size = "800, 50";
           outline_thickness = 0;
           dots_size = 0.33;
-          outer_color = "#000";
-          inner_color = "#000";
-          font_color = "#fff";
-          placeholder_text = "$PROMPT";
-          hide_input = true;
+          outer_color = "rgb(0, 0, 0)";
+          inner_color = "rgb(0, 0, 0)";
+          font_color = "rgb(200, 200, 200)";
+          placeholder_text = "locked.";
+          hide_input = false;
+          dots_center = true;
 
-          check_color = "#888";
-          fail_color = "#822";
+          check_color = "rgb(10, 10, 10)";
+          fail_color = "rgb(50, 10, 10)";
           fail_transition = 50;
-          swap_font_color = true;
 
-          halign = "left";
+
+          position = "0, 25";
+          halign = "center";
           valign = "bottom";
 
         }];
@@ -505,6 +541,7 @@ in
         result-spacing = 25;
         num-results = 5;
         background-color = "#000";
+        monitor = "";
       };
     };
 
@@ -525,8 +562,51 @@ in
       font = "Inter 12";
       iconPath = "${pkgs.papirus-icon-theme}/share/icons/papirus";
     };
-    swayidle = {
+    hypridle = {
       enable = true;
+      settings = {
+        general = {
+          lock_cmd = "pidof hyprlock || (hyprlock --immediate && pkill hyprlock)";
+          unlock_cmd = "pkill -USR1 hyprlock";
+          before_sleep_cmd = "loginctl lock-session";
+
+        };
+        listener = [
+          {
+            timeout = 150;
+            on-timeout = "brightnessctl - s set 10%";
+            on-resume = "brightnessctl -r";
+          }
+          {
+            timeout = 300;
+            on-timeout = "loginctl lock-session";
+          }
+          {
+            timeout = 330;
+            on-timeout = "niri ctl action power-off-monitors";
+          }
+          {
+            timeout = 1800;
+            on-timeout = "systemctl suspend";
+          }
+        ];
+      };
+
     };
+    network-manager-applet.enable = true;
+
+    blueman-applet.enable = true;
+
   };
+
+  dconf.settings."org/blueman/general" = {
+    plugin-list = [ "!ConnectionNotifier" ];
+  };
+
+  gtk.iconTheme = {
+    name = "Papirus";
+    package = pkgs.papirus-icon-theme;
+  };
+
+  xsession.preferStatusNotifierItems = true;
 }

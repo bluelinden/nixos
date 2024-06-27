@@ -1,0 +1,67 @@
+.bluebar {
+	background: none;
+	.bluebox {
+		background: black;
+		font-family: Lexend;
+		font-weight: 600;
+		padding: 12px;
+		margin: 12px;
+		border-radius: 16px;
+		&.bluenamebox {
+			font-size: 24px;
+			color: white;
+		}
+		&.bluesystray {
+			background: black;
+			.bluestatus {
+			  margin-top: 12px;
+				scale.bluectl {
+					all: unset;
+					trough {
+						all: unset;
+						border-radius: 50px;
+						min-height: 50px;
+						min-width: 10px;
+						highlight {
+							all: unset;
+							border-radius: 10px;
+						}
+						slider {
+							all: unset;
+							background: none;
+						}
+					}
+					&.vol {
+						trough {
+							background-color: #123;
+							highlight {
+								background-color: #4cf;
+							}
+						}
+					}
+					&.light {
+						trough {
+							background-color: #321;
+							highlight {
+								background-color: #fc4;
+							}
+						}
+					}
+				}
+			}
+			.bluebatt {
+				margin-top: 12px;
+				trough {
+					
+					background-color: #132;
+					min-width: 26px;
+					
+					progress {
+						background-color: #7f4;
+						min-width: 26px;
+					}
+				}
+			}
+		}
+	}
+}

@@ -135,6 +135,13 @@ in
     autoLogin.enable = false;
   };
 
+  services.logind = {
+    lidSwitch = "suspend";
+    lidSwitchDocked = "ignore";
+    lidSwitchExternalPower = "lock";
+  };
+  
+
 
   services.usbmuxd = {
     enable = true;
@@ -155,8 +162,11 @@ in
     ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="intel_backlight", MODE="0666", RUN+="${pkgs.coreutils}/bin/chmod a+w /sys/class/backlight/intel_backlight/brightness"
   '';
 
-  services.gnome.gnome-browser-connector.enable = true;
+  programs.light.enable = true;
+  services.blueman.enable = true;
+  hardware.brillo.enable = true;
 
+  services.gnome.gnome-browser-connector.enable = true;
 
   # Enable CUPS to print documents.
   services.printing = {
@@ -266,6 +276,8 @@ in
   # jovian steam creates a gamescope session
   # jovian.steam.enable = true;
   programs.steam.enable = true;
+  programs.steam.gamescopeSession.enable = true;
+  programs.gamescope.enable = true;
   programs.gamemode.enable = true;
 
   # environment.extraInit = ''
@@ -327,6 +339,7 @@ in
     mkcert
     hexedit
     screen
+    brightnessctl
     # localwp
     comma
     libinput
@@ -346,7 +359,6 @@ in
     stress
     s-tui
     nixd
-    upkgs.logseq
     nixpkgs-fmt
     gnome-network-displays
     python3
@@ -419,6 +431,7 @@ in
     llvmPackages.clangUseLLVM
     rust-bindgen
     upkgs.devenv
+
 
     # python310Full
     # python310Packages.pip
@@ -516,6 +529,7 @@ in
   systemd.services.NetworkManager-wait-online.enable = false;
   systemd.tmpfiles.rules = [
     "d /cfg 1774 root configmanager"
+    "f /dev/shm/looking-glass 0660 blue kvm -"
   ];
 
 
@@ -561,6 +575,7 @@ in
       "flathub:app/org.gnome.Decibels/x86_64/stable"
     ];
   };
+  
 
 
   fonts = {

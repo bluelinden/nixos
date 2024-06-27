@@ -1,0 +1,98 @@
+
+
+
+(defwidget bluebartop []
+  (box :orientation "vertical"
+    :halign "center"
+    :height "300"
+    :class "bluebox bluenamebox"
+    :hexpand true
+    :halign "fill"
+    :valign "start"
+    :height 200
+    (label :text "blue linden." :angle 90)))
+
+; (defwidget mid []
+  ;   (box :orientation "vertical"
+    ;     :halign "center"
+    ;     :height "300"
+    ;     :class "bluebox"
+    ;     :hexpand true
+    ;     :halign "fill"
+    ;     (label :text "blue linden" :angle 90)))
+
+(defwidget bluebarright []
+  (box :orientation "vertical"
+    :halign "center"
+    :height "300"
+    :class "bluebox bluesystray"
+    :hexpand true
+    :halign "fill"
+    :valign "end"
+    :active true
+    (bluesystray) (bluestatus) (bluesecondarystatus)))
+
+
+(defpoll brightness :interval "1s" "brillo -q")
+
+
+(defpoll mute :interval "1s"
+"pamixer --get-mute")
+
+(defpoll volume :interval "1s"
+  "pamixer --get-volume"
+)
+
+
+(defwidget bluestatus [] (
+    box :orientation "horizontal"
+    :class "bluestatus"
+    (scale :orientation "vertical"
+      :flipped true
+      :min 70
+      :max 100
+      :class "bluectl light"
+      :onchange `brillo -qS {} -u 75000`
+      :value (brightness))
+    (scale :orientation "vertical"
+      :flipped true
+      :min 05
+      :max 100
+      :class `bluectl vol {muted ? "muted" : ""}`
+      :onchange `wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%`
+      :value {volume}
+    )
+    
+    
+    
+  ))
+
+(defwidget bluesecondarystatus []
+  (progress :class "bluebatt"
+    :value {EWW_BATTERY.BAT0.capacity}
+    :flipped true
+    :orientation "v"
+    :halign "center"
+  )
+)
+
+(defwidget bluesystray [] (
+    systray :spacing 12
+    :orientation "v"
+    :space-evenly false
+    ; :active true
+    :prepend-new true
+  ))
+
+(defwindow bluebar
+  :monitor '[0]'
+  :geometry (geometry :x "0px"
+    :y "0px"
+    :width "72px"
+    :height "100%"
+  :anchor "top left")
+  
+  :stacking "fg"
+  :exclusive true
+  :focusable false
+  (box :orientation "v" (bluebartop) (bluebarright)))

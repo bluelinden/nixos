@@ -114,5 +114,6 @@
     yoavbls.pretty-ts-errors
     zguolee.tabler-icons
     eww-yuck.yuck
+    shaunlebron.vscode-parinfer
   ];
 }

@@ -18,7 +18,15 @@
 
   fileSystems."/" =
     { device = "/dev/mapper/boocrypt";
+      fsType = "tmpfs";
+      neededForBoot = true;
+      # options = [ "subvol=root" ];
+    };
+
+  fileSystems."/data" =
+    { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
+      neededForBoot = true;
       options = [ "subvol=root" ];
     };
 
@@ -43,6 +51,7 @@
   fileSystems."/nix" =
     { device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
+      neededForBoot = true;
       options = [ "subvol=store" ];
     };
 

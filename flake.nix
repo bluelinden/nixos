@@ -9,6 +9,7 @@
           config.joypixels.acceptLicense = true;
           config.permittedInsecurePackages = [
             "electron-25.9.0"
+            
           ];
           overlays = [ inputs.niri.overlays.niri ];
         };
@@ -20,10 +21,10 @@
           inputs.niri.nixosModules.niri
           inputs.lanzaboote.nixosModules.lanzaboote
           inputs.nix-index-database.nixosModules.nix-index
-          inputs.lix-module.nixosModules.default
           # pre-config settings stuff
           {
             config.programs.niri.enable = true;
+            config.programs.niri.package = custom-nixpkgs.stable.niri-unstable;
             config.nix.settings.extra-substituters = [
               "https://cache.lix.systems"
             ];
@@ -32,6 +33,7 @@
             ];
           }
           ./configuration.nix
+          inputs.lix-module.nixosModules.default
         ];
         system = "x86_64-linux";
         specialArgs = { inputs = inputs; s-nixpkgs = custom-nixpkgs.stable; u-nixpkgs = custom-nixpkgs.unstable; v-nixpkgs = custom-nixpkgs.vivaldi; };
@@ -60,13 +62,8 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "s-nixpkgs";
     };
-    lix = {
-      url = "git+https://git@git.lix.systems/lix-project/lix?ref=refs/tags/2.90-beta.1";
-      flake = false;
-    };
     lix-module = {
       url = "git+https://git.lix.systems/lix-project/nixos-module";
-      inputs.lix.follows = "lix";
       inputs.nixpkgs.follows = "s-nixpkgs";
     };
     niri = {

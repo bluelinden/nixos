@@ -1,12 +1,12 @@
 {
-  fileSystems."/" =
-    {
-      fsType = "tmpfs";
-      neededForBoot = true;
-      options = [ "defaults" "size=8G" "mode=755" ];
-    };
+  # fileSystems."/" =
+  #   {
+  #     fsType = "tmpfs";
+  #     neededForBoot = true;
+  #     options = [ "defaults" "size=8G" "mode=755" ];
+  #   };
 
-  fileSystems."/data" =
+  fileSystems."/" =
     {
       device = "/dev/mapper/boocrypt";
       fsType = "btrfs";
@@ -28,12 +28,12 @@
       options = [ "subvol=config" ];
     };
 
-  fileSystems."/home" =
-    {
-      device = "/dev/mapper/boocrypt";
-      fsType = "btrfs";
-      options = [ "subvol=home" ];
-    };
+  # fileSystems."/home" =
+  #   {
+  #     device = "/dev/mapper/boocrypt";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=home" ];
+  #   };
 
   fileSystems."/nix" =
     {

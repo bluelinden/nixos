@@ -50,9 +50,14 @@
   	    	  	  	  	mountpoint = "/cfg";
   	    	  	  	  	mountOptions = ["noatime" "compress=zstd"];
     	  	  	  	  };
-    	  	  	  	  "/root" = {
-  	  	  	  	  	    name = "root";
-  	  	  	  	    	mountpoint = "/";
+    	  	  	  	  "/userdata" = {
+  	  	  	  	  	  name = "user";
+  	  	  	  	    	mountpoint = "/userdata";
+  	  	  	  	    	mountOptions = ["noatime" "compress=zstd"];
+  	  	  	    	  };
+                    "/sysdata" = {
+  	  	  	  	  	  name = "system";
+  	  	  	  	    	mountpoint = "/sysdata";
   	  	  	  	    	mountOptions = ["noatime" "compress=zstd"];
   	  	  	    	  };
   	  	  	    	  "/swap" = {

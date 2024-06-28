@@ -19,6 +19,7 @@
       nixosConfigurations.boo = inputs.s-nixpkgs.lib.nixosSystem {
         modules = [
           inputs.niri.nixosModules.niri
+          inputs.impermanence.nixosModules.impermanence
           inputs.lanzaboote.nixosModules.lanzaboote
           inputs.nix-index-database.nixosModules.nix-index
           # pre-config settings stuff
@@ -57,6 +58,8 @@
       repo = "nix-alien";
     };
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    impermanence.url = "github:nix-community/impermanence";
+
 
     fenix = {
       url = "github:nix-community/fenix";

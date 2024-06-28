@@ -24,6 +24,7 @@ in
       ./system/networking/tailscale.nix
       ./system/networking/base.nix
       ./system/languages.nix
+      ./system/impermanence.nix
       ./system/utils/ydotool.nix
     ];
 
@@ -140,7 +141,7 @@ in
     lidSwitchDocked = "ignore";
     lidSwitchExternalPower = "lock";
   };
-  
+
 
 
   services.usbmuxd = {
@@ -197,6 +198,9 @@ in
   security.rtkit.enable = true;
   security.sudo-rs = {
     enable = true;
+    extraConfig = ''
+      Defaults lecture="never"
+    '';
 
   };
   security.pam.services.login.googleAuthenticator.enable = true;
@@ -375,6 +379,7 @@ in
     pkg-config
     cairo
     dig
+    htop
     git-lfs
     # docker-compose
     podman-compose
@@ -499,15 +504,16 @@ in
   system.stateVersion = "23.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.optimise.automatic = true;
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 21d";
-  };
   nix.extraOptions = ''
     min-free = ${toString (5 * 1024 * 1024 * 1024)}
     max-free = ${toString (15 * 1024 * 1024 * 1024)}
   '';
+
+  services.beesd.filesystems.boocrypt = {
+    spec = "/dev/mapper/boocrypt";
+    hashTableSizeMB = 2048;
+    workDir = "/var/lib/beesd";
+  };
 
   appstream.enable = true;
   programs.zsh.zsh-autoenv.enable = true;
@@ -531,6 +537,14 @@ in
     "d /cfg 1774 root configmanager"
     "f /dev/shm/looking-glass 0660 blue kvm -"
   ];
+
+  programs.nh = {
+    enable = true;
+    flake = "/cfg";
+    clean = {
+      enable = true;
+    };
+  };
 
 
 
@@ -575,7 +589,7 @@ in
       "flathub:app/org.gnome.Decibels/x86_64/stable"
     ];
   };
-  
+
 
 
   fonts = {

@@ -1,51 +1,51 @@
-{ specialArgs, config, ... }:
+{ specialArgs, config, lib, ... }:
 let
   pkgs = specialArgs.s-nixpkgs;
   upkgs = specialArgs.u-nixpkgs;
-  # vpkgs = specialArgs.v-nixpkgs;
-  xwayland-satellite = pkgs.callPackage ../../packages/xwayland-satellite/default.nix { };
-  # floorp-updated-wrapper = (import ../../packages/floorp/wrapper.nix);
-  # pulsar = upkgs.callPackage (import ../../packages/pulsar/default.nix) { };
-  code-configuration = ((import ./code.nix) { inherit upkgs; inherit pkgs; extensions = specialArgs.inputs.nix-vscode-extensions.extensions; });
+  code-configuration = ((import ./code.nix) {
+    inherit upkgs; inherit pkgs; extensions = specialArgs.inputs.nix-vscode-extensions.extensions;
+  });
 
 in
 {
 
+  imports = [
+    ./zed.nix
+  ];
+
   home.stateVersion = "23.05";
   home.packages = with pkgs; [
-    xwayland-satellite
+    xwayland-satellite-unstable
+    xwayland-run
     gtklock
     activitywatch
-    gnome.dconf-editor
-    gnome.gnome-sound-recorder
-    gnome.ghex
-    gnome.gnome-terminal
-    gnome.gitg
+    dconf-editor
+    gnome-sound-recorder
+    ghex
+    gnome-terminal
+    gitg
     bottles
     firefox-bin
-    zed-editor
+    upkgs.zed-editor
     # upkgs.upscayl
     direnv
+    gimp-with-plugins
 
     thunderbird
     tuba
     gay
     fractal
     #    upkgs.libresprite
-    gnome3.gnome-tweaks
-    gnome.gnome-boxes
-    cosmocc
     flyctl
     cloc
     # textpieces
-    upkgs.apostrophe
+    apostrophe
     google-cursor
     qpwgraph
     helvum
     zint
     handbrake
     fontforge
-    upkgs.lapce
     # rustup
     qmk
     vial
@@ -64,49 +64,49 @@ in
     overskride
     # networkmanagerapplet
     cosmic-applets
-    upkgs.beeper
     easyeffects
     metasploit
-    zap
     armitage
     postgresql
     ddev
+    devenv
     wp-cli
     php81Packages.composer
-    vagrant
     upkgs.kanidm
-    libreoffice-fresh
-    blender
+    libreoffice
+    upkgs.blender
     olive-editor
-    lmms
     looking-glass-client
     upkgs.warp-terminal
 
     pamixer
     # upkgs.minecraft
     upkgs.prismlauncher
-    gnome.iagno
+    iagno
     fraunces
     lexend
     nerdfonts
     upkgs.pgmodeler
     sqlfluff
-    upkgs.aseprite
+    # upkgs.aseprite
     steamPackages.steamcmd
-    steam-tui
+    openloco
+    openttd
+
+    checkra1n
+
+    upkgs.aseprite
+
     # upkgs.inkscape
     ookla-speedtest
     emulsion-palette
     halftone
-    obsidian
-    sirikali
     imhex
     sniffnet
     safeeyes
     dell-command-configure
     drawing
     ungoogled-chromium
-    upkgs.anytype
     networkmanagerapplet
     (vivaldi.override {
       commandLineArgs = [
@@ -122,23 +122,8 @@ in
     dynamic-wallpaper
     upkgs.gnome-frog
     authenticator
-    gnomeExtensions.blur-my-shell
-    gnomeExtensions.burn-my-windows
-    gnomeExtensions.appindicator
-    gnomeExtensions.tailscale-qs
-    gnomeExtensions.caffeine
-    gnomeExtensions.just-perfection
-    gnomeExtensions.easyeffects-preset-selector
-    # gnomeExtensions.paperwm
-    gnomeExtensions.compiz-windows-effect
-    (makeDesktopItem {
-      name = "windows-vm-launch";
-      desktopName = "Windows 11 Pro";
-      exec = "${pkgs.stdenv.shell} ${./vms/windows.sh}";
-      comment = "Windows environment for use with Windows software";
-      icon = "${papirus-icon-theme}/share/icons/Papirus/128x128/apps/windows95.svg";
-      terminal = true;
-    })
+    logseq
+    specialArgs.inputs.zen-browser.packages."x86_64-linux".specific
     (writeShellScriptBin "npb" ''
       if [ "$#" -ne 2 ]; then
         echo "quickie Nix Package Build script by blue linden"
@@ -170,18 +155,23 @@ in
     "$HOME/.cargo/bin"
   ];
   home.sessionVariables = rec {
+    WSCRIBE_MODELS_DIR = "${XDG_DATA_HOME}/whisper-models";
+    LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
     NIXOS_OZONE_WL = 1;
     XDG_CACHE_HOME = "$HOME/.cache";
     XDG_CONFIG_HOME = "$HOME/.config";
     XDG_DATA_HOME = "$HOME/.local/share";
     XDG_STATE_HOME = "$HOME/.local/state";
-    WSCRIBE_MODELS_DIR = "${XDG_DATA_HOME}/whisper-models";
+
+    PKG_CONFIG_PATH = ''${pkgs.systemd.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.dbus.dev}/lib/pkgconfig'';
   };
 
   stylix.targets = {
     vscode.enable = false;
     tofi.enable = false;
     mako.enable = false;
+    xresources.enable = false;
+
   };
 
   programs = {
@@ -200,13 +190,6 @@ in
       settings = {
         version = 1;
       };
-    };
-
-    bash = {
-      enable = true;
-      bashrcExtra = ''
-        printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash" }}\x9c'
-      '';
     };
 
     vscode = code-configuration;
@@ -243,14 +226,37 @@ in
         $env.config.show_banner = false
       '';
       extraEnv = ''
-        $env.PATH = ($env.PATH | 
+        $env.PATH = ($env.PATH |
           split row (char esep) |
           prepend /home/blue/.cache/.bun/bin |
           prepend /home/blue/.local/bin |
           prepend /home/blue/.cargo/bin
         )
-        $env.PKG_CONFIG_PATH = "${pkgs.systemd.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig"
+        $env.PKG_CONFIG_PATH = "${pkgs.systemd.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.dbus.dev}/lib/pkgconfig"
       '';
+    };
+
+    zellij = {
+      enable = true;
+      settings = {
+        default_shell = "${pkgs.nushell}/bin/nu";
+        pane_frames = false;
+        simplified_ui = true;
+      };
+    };
+
+    bash = {
+      enable = true;
+      bashrcExtra = ''
+        printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash" }}\x9c'
+      '';
+
+      initExtra = "
+        if [[ ! $(ps T --no-header --format=comm | grep \"^nu$\") && -z $BASH_EXECUTION_STRING ]]; then
+            shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=''
+            exec \"${lib.getExe pkgs.nushell}\" \"$LOGIN_OPTION\"
+        fi
+      ";
     };
 
     carapace.enable = true;
@@ -268,7 +274,7 @@ in
     alacritty = {
       enable = true;
       settings = {
-        shell = {
+        terminal.shell = {
           program = "${pkgs.zellij}/bin/zellij";
         };
       };
@@ -347,16 +353,64 @@ in
             { proportion = 2. / 3.; }
             { proportion = 1. / 1.; }
           ];
-          gaps = 12;
-          struts = {
-            left = 66;
+          gaps = 8;
+          focus-ring = {
+            width = 6;
+            active = {
+              gradient = {
+                from = "#ead2d8";
+                to = "#d5a5b6";
+                angle = 340;
+              };
+
+            };
+            inactive = {
+              gradient = {
+                from = "#5c1a34";
+                to = "#4b1128";
+                angle = 340;
+              };
+            };
+          };
+        };
+        animations = {
+          horizontal-view-movement = {
+            spring = {
+              damping-ratio = 0.600000;
+              epsilon = 0.000100;
+              stiffness = 600;
+            };
+          };
+          window-movement = {
+            spring = {
+              damping-ratio = 0.600000;
+              epsilon = 0.000100;
+              stiffness = 600;
+            };
+          };
+          window-resize = {
+            spring = {
+              damping-ratio = 0.600000;
+              epsilon = 0.000100;
+              stiffness = 600;
+            };
+          };
+          window-open = {
+            spring = {
+              damping-ratio = 0.600000;
+              epsilon = 0.000100;
+              stiffness = 600;
+            };
           };
         };
         binds = with config.lib.niri.actions; {
           # basics
           "Mod+Shift+Slash".action = show-hotkey-overlay;
           "Mod+T".action = spawn "${pkgs.alacritty}/bin/alacritty";
-          "Mod+Space".action = spawn "${pkgs.dash}/bin/dash" "-c" "$(${pkgs.tofi}/bin/tofi-drun --fuzzy-match=true)";
+          "Mod+Space".action = spawn "cosmic-launcher";
+          "Mod+A".action = spawn "cosmic-app-library";
+          "Mod+Z".action = spawn "zeditor";
+          "Mod+B".action = spawn "zen";
           "Mod+Alt+Space".action = spawn "${pkgs.dash}/bin/dash" "-c" "$(${pkgs.tofi}/bin/tofi-run)";
           "Super+L".action = spawn "${pkgs.systemd}/bin/loginctl" "lock-session";
 
@@ -450,27 +504,18 @@ in
         ];
         spawn-at-startup = [
           {
-            command = [ "${xwayland-satellite}/bin/xwayland-satellite" ":13" ];
+            command = [ "${pkgs.xwayland-satellite-unstable}/bin/xwayland-satellite" ":13" ];
           }
           {
-            command = [ "${pkgs.mako}/bin/mako" ];
+            command = [ "${specialArgs.inputs.cosmic-ext-alternative-startup.packages.x86_64-linux.default}/bin/cosmic-ext-alternative-startup" ];
           }
           {
-            command = [ "${pkgs.wpaperd}/bin/wpaperd" "-d" ];
+            command = [ "${pkgs.niri-unstable}/bin/niri" "msg" "output" "eDP-1" "scale" "1" ];
           }
           {
-            command = [ "${pkgs.eww}/bin/eww" "daemon" ];
-          }
-          {
-            command = [ "${pkgs.eww}/bin/eww" "open" "bluebar" ];
+            command = [ "${pkgs.dbus}/bin/dbus-update-activation-environment" "DISPLAY" ];
           }
         ];
-        outputs = {
-          "eDP-1" = {
-            scale = 1.0;
-          };
-
-        };
         prefer-no-csd = true;
       };
 
@@ -479,51 +524,51 @@ in
 
     };
 
-    hyprlock = {
-      enable = true;
-      settings = {
-        general = {
-          disable_loading_bar = true;
-          hide_cursor = true;
-          grace = 300;
-          ignore_empty_input = true;
-        };
+    #    hyprlock = {
+    #      enable = true;
+    #      settings = {
+    #        general = {
+    #          disable_loading_bar = true;
+    #          hide_cursor = true;
+    #          grace = 300;
+    #          ignore_empty_input = true;
+    #        };
+    #
+    #        background = [{
+    #          monitor = "";
+    #          color = "rgba(0, 0, 0, 1)";
+    #        }];
+    #
+    #        input-field = [{
+    #          size = "800, 50";
+    #          outline_thickness = 0;
+    #          dots_size = 0.33;
+    #          outer_color = "rgb(0, 0, 0)";
+    #          inner_color = "rgb(0, 0, 0)";
+    #          font_color = "rgb(200, 200, 200)";
+    #          placeholder_text = "locked.";
+    #          hide_input = false;
+    #          dots_center = true;
+    #
+    #          check_color = "rgb(10, 10, 10)";
+    #          fail_color = "rgb(50, 10, 10)";
+    #          fail_transition = 50;
+    #
+    #
+    #          position = "0, 25";
+    #          halign = "center";
+    #          valign = "bottom";
+    #
+    #        }];
+    #
+    #
+    #
+    #      };
+    #    };
 
-        background = [{
-          monitor = "";
-          color = "rgba(0, 0, 0, 1)";
-        }];
-
-        input-field = [{
-          size = "800, 50";
-          outline_thickness = 0;
-          dots_size = 0.33;
-          outer_color = "rgb(0, 0, 0)";
-          inner_color = "rgb(0, 0, 0)";
-          font_color = "rgb(200, 200, 200)";
-          placeholder_text = "locked.";
-          hide_input = false;
-          dots_center = true;
-
-          check_color = "rgb(10, 10, 10)";
-          fail_color = "rgb(50, 10, 10)";
-          fail_transition = 50;
-
-
-          position = "0, 25";
-          halign = "center";
-          valign = "bottom";
-
-        }];
-
-
-
-      };
-    };
-
-    wpaperd = {
-      enable = true;
-    };
+    # wpaperd = {
+    #   enable = true;
+    # };
 
 
 
@@ -550,24 +595,27 @@ in
       configDir = ./eww;
     };
 
+    thefuck.enable = true;
+
+
   };
   services = {
     gnome-keyring.enable = true;
-    mako = {
-      enable = true;
-      backgroundColor = "#000";
-      borderColor = "#000";
-      borderRadius = 20;
-      borderSize = 0;
-      font = "Inter 12";
-      iconPath = "${pkgs.papirus-icon-theme}/share/icons/papirus";
-    };
+    # mako = {
+    #   enable = true;
+    #   # backgroundColor = "#000";
+    #   # borderColor = "#000";
+    #   # borderRadius = 20;
+    #   # borderSize = 0;
+    #   # font = "Inter 12";
+    #   iconPath = "${pkgs.papirus-icon-theme}/share/icons/papirus";
+    # };
     hypridle = {
       enable = true;
       settings = {
         general = {
-          lock_cmd = "pidof hyprlock || (hyprlock --immediate && pkill hyprlock)";
-          unlock_cmd = "pkill -USR1 hyprlock";
+          #          lock_cmd = "pidof hyprlock || (hyprlock --immediate && pkill hyprlock)";
+          #          unlock_cmd = "pkill -USR1 hyprlock";
           before_sleep_cmd = "loginctl lock-session";
 
         };
@@ -597,7 +645,55 @@ in
 
     blueman-applet.enable = true;
 
+    kanshi = {
+      enable = true;
+      systemdTarget = "graphical-session.target";
+      profiles = {
+        laptop-only = {
+          name = "laptop-only";
+          outputs = [
+            {
+              criteria = "eDP-1";
+              mode = "1920x1080@60.012";
+              scale = 1.0;
+            }
+          ];
+        };
+        samsung-monitor = {
+          name = "samsung-monitor";
+          outputs = [
+            {
+              criteria = "BOE 0x072F Unknown";
+              mode = "1920x1080@60.012";
+              scale = 1.0;
+              position = "0,150";
+            }
+            {
+              criteria = "HDMI-A-1";
+              mode = "1680x1050@59.883";
+              scale = 1.0;
+              position = "1920,0";
+            }
+          ];
+        };
+      };
+    };
+
+    activitywatch = {
+      enable = true;
+      package = pkgs.aw-server-rust;
+      watchers = {
+        awatcher = {
+          package = upkgs.awatcher;
+        };
+      };
+    };
+
   };
+
+  systemd.user.services.hypridle.Unit.After = lib.mkForce
+    [ "graphical-session.target" ];
+
 
   dconf.settings."org/blueman/general" = {
     plugin-list = [ "!ConnectionNotifier" ];

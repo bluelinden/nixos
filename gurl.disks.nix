@@ -31,19 +31,15 @@
   	  	  	  	    mountpoint = "/nix";
   	  	  	  	    mountOptions = ["noatime" "compress=zstd"];
   	  	  	  	  };
-  	  	  	  	  "/home" = {
-  	  	  	  	    name = "home";
-  	  	  	  	    mountpoint = "/home";
-  	  	  	  	    mountOptions = ["noatime" "compress=zstd"];
-  	  	  	  	  };
+  	  	  	  	  
   	  	  	  	  "/config" = {
   	  	  	  	  	name = "config";
   	  	  	  	  	mountpoint = "/cfg";
   	  	  	  	  	mountOptions = ["noatime" "compress=zstd"];
   	  	  	  	  };
-  	  	  	  	  "/root" = {
-  	  	  	  	  	name = "root";
-  	  	  	  	  	mountpoint = "/";
+  	  	  	  	  "/data" = {
+  	  	  	  	  	name = "data";
+  	  	  	  	  	mountpoint = "/data";
   	  	  	  	  	mountOptions = ["noatime" "compress=zstd"];
   	  	  	  	  };
   	  	  	  	  "/swap" = {

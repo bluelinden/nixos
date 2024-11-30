@@ -8,6 +8,8 @@
     100.69.42.7 barbarian.skunk-ray.ts.net
     100.69.42.8 ninja.skunk-ray.ts.net
     100.69.42.9 beekeeper.skunk-ray.ts.net
+    100.69.42.10 brute.skunk-ray.ts.net
+    100.69.42.11 industrialist.skunk-ray.ts.net
     100.69.42.2 fireknight
     100.69.42.3 boo
     100.69.42.4 iceknight
@@ -16,5 +18,7 @@
     100.69.42.7 barbarian
     100.69.42.8 ninja
     100.69.42.9 beekeeper
+    100.69.42.10 brute
+    100.69.42.11 industrialist
   '';
 }

@@ -10,7 +10,7 @@
     andrejunges.handlebars
     ardenivanov.svelte-intellisense
     arrterian.nix-env-selector
-    astro-build.astro-vscode
+    # astro-build.astro-vscode
     bbenoist.nix
     beardedbear.beardedicons
     bierner.markdown-mermaid
@@ -84,7 +84,7 @@
     piousdeer.adwaita-theme
     pkief.material-product-icons
     plievone.vscode-template-literal-editor
-    redhat.java
+    # redhat.java
     redhat.vscode-xml
     redhat.vscode-yaml
     rust-lang.rust-analyzer
@@ -92,7 +92,7 @@
     # RobertOstermann.vscode-sqlfluff
     stylelint.vscode-stylelint
     surrealdb.surrealql
-    svelte.svelte-vscode
+    # svelte.svelte-vscode
     syler.sass-indented
     tamasfe.even-better-toml
     teabyii.ayu

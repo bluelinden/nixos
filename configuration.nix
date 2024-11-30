@@ -7,10 +7,13 @@ let
   pkgs = specialArgs.s-nixpkgs;
   upkgs = specialArgs.u-nixpkgs;
   webusb-udev = upkgs.callPackage ./packages/webusb-udev/default.nix { };
-  distrobox-patched = upkgs.callPackage ./packages/distrobox/default.nix { };
   fenix = specialArgs.inputs.fenix;
   niri = specialArgs.inputs.niri;
+  chaotic = specialArgs.inputs.chaotic;
   stylix = specialArgs.inputs.stylix;
+  nix-ld-so = pkgs.runCommand "ld.so" { } ''
+    ln -s "$(cat '${pkgs.stdenv.cc}/nix-support/dynamic-linker')" $out
+  '';
 in
 {
   imports =
@@ -18,40 +21,42 @@ in
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
       specialArgs.inputs.home-manager.nixosModules.home-manager
-      specialArgs.inputs.flatpaks.nixosModules.default
+      specialArgs.inputs.flatpaks.nixosModules.declarative-flatpak
+      specialArgs.inputs.chaotic.nixosModules.default
       stylix.nixosModules.stylix
       ./system/networking/dns.nix
       ./system/networking/tailscale.nix
       ./system/networking/base.nix
       ./system/languages.nix
-      ./system/impermanence.nix
+      ./system/boo.impermanence.nix
       ./system/utils/ydotool.nix
+      ./system/boo.backups.nix
+      ./system/cosmic-on-niri.nix
     ];
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  nixpkgs.overlays = [ niri.overlays.niri ];
 
-  # system.copySystemConfiguration = true;
 
   # Bootloader.
   boot = {
     loader.systemd-boot.enable = lib.mkForce false;
     lanzaboote = {
       enable = true;
-      pkiBundle = "/etc/secureboot";
+      pkiBundle = "/state/etc/secureboot";
     };
     # crashDump.enable = true;
     # initrd.verbose = false;
     # consoleLogLevel = 0;
     # kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
     initrd.systemd.enable = true;
+    initrd.systemd.emergencyAccess = false;
     initrd.kernelModules = [ "tpm-tis" "i915" ];
 
     # initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
-    kernelPackages = upkgs.linuxPackages_xanmod_latest;
-    extraModulePackages = with config.boot.kernelPackages; [ digimend ];
+    # kernelPackages = upkgs.linuxPackages_xanmod_latest;
+    # extraModulePackages = with config.boot.kernelPackages; [ digimend ];
     loader.systemd-boot.graceful = true;
     loader.timeout = 0;
     loader.systemd-boot.editor = false;
@@ -63,7 +68,7 @@ in
     loader.grub.enable = false;
     # loader.grub.font = /home/blue/.local/share/fonts/Lexend-VariableFont_wght.ttf;
     # loader.grub.backgroundColor = "#4b1128";
-    plymouth.enable = false;
+    plymouth.enable = true;
     loader.systemd-boot.configurationLimit = 30;
     loader.efi.canTouchEfiVariables = true;
     kernel.sysctl."kernel.sysrq" = 96;
@@ -74,8 +79,9 @@ in
 
   services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
-  hardware.xpadneo.enable = true;
-  hardware.xone.enable = true;
+  # hardware.xpadneo.enable = true;
+  # hardware.opentabletdriver.enable = true;
+  # hardware.xone.enable = true;
   hardware.cpu.intel.updateMicrocode = true;
 
   services.kmscon = {
@@ -90,6 +96,8 @@ in
       device = "/swap/swapfile";
     }
   ];
+
+
 
   networking.hostName = "boo"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -114,27 +122,49 @@ in
     enable = true;
     xkb.layout = "us";
     xkb.variant = "";
-    desktopManager = {
-      gnome.enable = true;
-    };
-    displayManager = {
-      gdm = {
-        enable = true;
-        wayland = true;
-        banner = ''
-          this computer is the property of blue linden. 
-        '';
-      };
-    };
-
   };
+  services.displayManager.cosmic-greeter.enable = true;
 
-
-  services.tlp.enable = false;
-
-  services.displayManager = {
-    autoLogin.enable = false;
+  services.desktopManager = {
+    cosmic.enable = true;
   };
+  # these just make it way easier to use my computer lol, even though i won't have GNOME anymore.
+  services.gnome.core-utilities.enable = true;
+
+  security.polkit.enable = true;
+  services.accounts-daemon.enable = true;
+  services.dleyna-renderer.enable = true;
+  services.dleyna-server.enable = true;
+  services.power-profiles-daemon.enable = false;
+  services.gnome.at-spi2-core.enable = true;
+  services.gnome.evolution-data-server.enable = true;
+  services.gnome.gnome-keyring.enable = true;
+  services.hardware.bolt.enable = true;
+  services.cpupower-gui.enable = true;
+  # TODO: Enable once #177946 is resolved
+  # services.packagekit.enable = mkDefault true;
+  services.udisks2.enable = true;
+  services.upower.enable = config.powerManagement.enable;
+
+  xdg.mime.enable = true;
+  xdg.icons.enable = true;
+
+  xdg.portal.enable = true;
+
+  services.xserver.updateDbusEnvironment = true;
+
+  programs.wireshark.enable = true;
+
+  # gnome has a custom alert theme but it still
+  # inherits from the freedesktop theme.
+
+  # Needed for themes and backgrounds
+  environment.pathsToLink = [
+    "/share" # TODO: https://github.com/NixOS/nixpkgs/issues/47173
+  ];
+
+
+  services.tlp.enable = true;
 
   services.logind = {
     lidSwitch = "suspend";
@@ -166,27 +196,29 @@ in
   programs.light.enable = true;
   services.blueman.enable = true;
   hardware.brillo.enable = true;
+  
+  services.system76-scheduler.enable = true;
+  hardware.system76.power-daemon.enable = false;
+  
 
-  services.gnome.gnome-browser-connector.enable = true;
+  # services.gnome.gnome-browser-connector.enable = true;
 
   # Enable CUPS to print documents.
   services.printing = {
     enable = true;
     browsing = true;
-    drivers = [
-      pkgs.canon-cups-ufr2
-    ];
+    # drivers = [
+    #   pkgs.canon-cups-ufr2
+    # ];
   };
 
 
 
-  # Enable sound with pipewire.
-  sound.enable = true;
   hardware.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
   hardware.opengl = {
     # driSupport32Bit = false;
-    driSupport = true;
+    enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
       intel-vaapi-driver
@@ -198,13 +230,15 @@ in
   security.rtkit.enable = true;
   security.sudo-rs = {
     enable = true;
-    extraConfig = ''
-      Defaults lecture="never"
-    '';
-
   };
-  security.pam.services.login.googleAuthenticator.enable = true;
-  security.pam.services.hyprlock.googleAuthenticator.enable = true;
+  security.pam.services.login.oathAuth = true;
+  security.pam.services.cosmic-greeter.oathAuth = false;
+  security.pam.oath = {
+    enable = true;
+    window = 5;
+    usersFile = "/etc/oath/users.oath";
+    digits = 6;
+  };
   security.apparmor.enable = true;
   security.apparmor.policies.dummy.profile = ''
     /dummy {
@@ -232,8 +266,8 @@ in
   programs.dconf.enable = true;
   services.ydotool.enable = true;
   hardware.uinput.enable = true;
-  programs.kdeconnect.enable = true;
-  programs.kdeconnect.package = pkgs.gnomeExtensions.gsconnect;
+  # programs.kdeconnect.enable = true;
+  # programs.kdeconnect.package = pkgs.gnomeExtensions.gsconnect;
   programs.command-not-found.enable = false;
   programs.nix-ld.enable = true;
   programs.virt-manager.enable = true;
@@ -274,13 +308,14 @@ in
       };
     };
     oci-containers.backend = "docker";
+    waydroid.enable = true;
   };
 
 
   # jovian steam creates a gamescope session
   # jovian.steam.enable = true;
-  programs.steam.enable = true;
-  programs.steam.gamescopeSession.enable = true;
+  # programs.steam.enable = true;
+  # programs.steam.gamescopeSession.enable = true;
   programs.gamescope.enable = true;
   programs.gamemode.enable = true;
 
@@ -299,8 +334,9 @@ in
   users.users.blue = {
     isNormalUser = true;
     description = "blue linden";
-    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" ];
-    shell = pkgs.nushell;
+    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" "wireshark" ];
+    shell = pkgs.bash;
+    passwordFile = "/state/etc/blpw";
   };
   users.groups.configmanager = {
     name = "configmanager";
@@ -308,7 +344,10 @@ in
     gid = 1337;
   };
 
+
   users.groups.ddc = { };
+
+  users.mutableUsers = false;
 
   users.groups.plugdev = {
     name = "plugdev";
@@ -333,7 +372,7 @@ in
     papirus-icon-theme
     upkgs.morewaita-icon-theme
     gum
-    distrobox-patched
+    distrobox
     sbctl
     upkgs.nodejs_22
     upkgs.nodePackages_latest.pnpm
@@ -342,6 +381,7 @@ in
     colmena
     mkcert
     hexedit
+
     screen
     brightnessctl
     # localwp
@@ -354,12 +394,10 @@ in
     upkgs.adw-gtk3
     opendrop
     owl
-    google-authenticator
     asciinema
     d-spy
     php81
     php81Packages.composer
-    apple-cursor
     stress
     s-tui
     nixd
@@ -372,6 +410,11 @@ in
     dnsmasq
     neofetch
     fastfetch
+
+    talosctl
+
+    sound-theme-freedesktop
+
     qemu
     unzip
     gnumake
@@ -381,6 +424,7 @@ in
     dig
     htop
     git-lfs
+    dua
     # docker-compose
     podman-compose
     # upkgs.vscode.fhs
@@ -406,6 +450,8 @@ in
 
     cachix
 
+
+
     # rust toolchain
     (fenix.packages.x86_64-linux.complete.toolchain)
     rust-analyzer
@@ -426,39 +472,56 @@ in
     arp-scan
     nmap
     rustscan
+    trippy
+    traceroute
+    sniffnet
     nmapsi4
+    wirelesstools
+    wireshark
+    termshark
+    tcpdump
+    lynis
+    gobuster
+    openvas-scanner
+    upkgs.binsider
 
     protobuf
     llvmPackages.libclang
     llvm
     llvmPackages.bintools
-    clang
     llvmPackages.clangUseLLVM
     rust-bindgen
     upkgs.devenv
+    wl-clipboard
 
+    webkitgtk.dev
+    librsvg.dev
+    glib.dev
+    glib
+    bzip2
+    bzip2.dev
 
+    powertop
+
+    nix-tree
+
+    specialArgs.inputs.nixos-cosmic.packages.x86_64-linux.cosmic-session
+    specialArgs.inputs.cosmic-ext-alternative-startup.packages.x86_64-linux.default
+
+    cpupower-gui
+    
     # python310Full
     # python310Packages.pip
     # python310Packages.setuptools
     nix-init
-    upkgs.mission-center
+    # upkgs.mission-center
     # wscribe
-    specialArgs.inputs.nix-software-center.packages.${system}.nix-software-center
-    specialArgs.inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
-    specialArgs.inputs.nix-alien.packages.${system}.nix-alien
   ];
   environment.binsh = "${pkgs.dash}/bin/dash";
 
   programs.direnv.enable = true;
 
   environment.sessionVariables = {
-    LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-    NIXOS_OZONE_WL = 1;
-    XDG_CACHE_HOME = "$HOME/.cache";
-    XDG_CONFIG_HOME = "$HOME/.config";
-    XDG_DATA_HOME = "$HOME/.local/share";
-    XDG_STATE_HOME = "$HOME/.local/state";
     BINDGEN_EXTRA_CLANG_ARGS = ((builtins.map (a: ''-I"${a}/include"'') [
       # add dev libraries here (e.g. pkgs.libvmi.dev)
       pkgs.glibc.dev
@@ -469,12 +532,11 @@ in
       ''-I"${pkgs.glib.dev}/include/glib-2.0"''
       ''-I${pkgs.glib.out}/lib/glib-2.0/include/''
     ]);
-    PKG_CONFIG_PATH = ''${pkgs.systemd.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig'';
   };
 
-  environment.gnome.excludePackages = with pkgs.gnome; [
-    gnome-software
-  ];
+  # environment.gnome.excludePackages = with pkgs.gnome; [
+    # gnome-software
+  # ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -504,16 +566,17 @@ in
   system.stateVersion = "23.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.optimise.automatic = true;
+  nix.trustedUsers = [ "root" "blue" ];
   nix.extraOptions = ''
     min-free = ${toString (5 * 1024 * 1024 * 1024)}
     max-free = ${toString (15 * 1024 * 1024 * 1024)}
   '';
 
-  services.beesd.filesystems.boocrypt = {
-    spec = "/dev/mapper/boocrypt";
-    hashTableSizeMB = 2048;
-    workDir = "/var/lib/beesd";
-  };
+  # services.beesd.filesystems.boocrypt = {
+  #   spec = "/dev/mapper/boocrypt";
+  #   hashTableSizeMB = 2048;
+  #   workDir = "/var/lib/beesd";
+  # };
 
   appstream.enable = true;
   programs.zsh.zsh-autoenv.enable = true;
@@ -534,7 +597,6 @@ in
   # '';
   systemd.services.NetworkManager-wait-online.enable = false;
   systemd.tmpfiles.rules = [
-    "d /cfg 1774 root configmanager"
     "f /dev/shm/looking-glass 0660 blue kvm -"
   ];
 
@@ -576,19 +638,16 @@ in
     target-dir = "/var/lib/flatpak";
     remotes = {
       "gnome-nightly" = "https://nightly.gnome.org/gnome-nightly.flatpakrepo";
-      "gradience-nightly" = "https://gradienceteam.github.io/Gradience/index.flatpakrepo";
       "flathub" = "https://dl.flathub.org/repo/flathub.flatpakrepo";
     };
     packages = [
-      "gradience-nightly:app/com.github.GradienceTeam.Gradience.Devel/x86_64/master"
-      "flathub:app/net.hovancik.Stretchly/x86_64/stable"
-      "flathub:app/io.missioncenter.MissionCenter/x86_64/stable"
-      "flathub:app/io.podman_desktop.PodmanDesktop/x86_64/stable"
       "flathub:app/net.mkiol.SpeechNote/x86_64/stable"
       "flathub:app/com.github.tchx84.Flatseal/x86_64/stable"
       "flathub:app/org.gnome.Decibels/x86_64/stable"
+      "flathub:app/com.valvesoftware.Steam/x86_64/stable"
     ];
   };
+  systemd.services.manage-system-flatpaks.serviceConfig.Nice = 20;
 
 
 
@@ -604,8 +663,8 @@ in
 
   stylix = {
     enable = true;
-    image = ./photos/verge-rainbow-panels.jpeg;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
+    image = ./photos/HIYA.png;
+    base16Scheme = ./colors/monokai.yml;
     fonts = {
       serif = {
         package = pkgs.fraunces;
@@ -619,7 +678,7 @@ in
 
       monospace = {
         package = pkgs.nerdfonts;
-        name = "CommitMono Nerd Font";
+        name = "JetBrainsMono Nerd Font";
       };
 
       emoji = {
@@ -632,7 +691,20 @@ in
       name = "GoogleDot-Black";
       size = 24;
     };
+    targets = {
+      plymouth = {
+        logo = "${pkgs.nixos-icons}/share/icons/hicolor/256x256/apps/nix-snowflake-white.png";
+        logoAnimated = false;
+      };
+    };
   };
+
+  # CHAOTIC NYX TROUBLE ZONE!!
+  chaotic.nyx.overlay.enable = true;
+  chaotic.nyx.cache.enable = true;
+  boot.kernelPackages = pkgs.linuxPackages_testing;
+  services.scx.enable = true;
+  services.scx.scheduler = "scx_lavd";
 
 
 }

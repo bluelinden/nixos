@@ -1,25 +1,26 @@
 { pkgs, ... }: {
   services.restic = {
-    enable = true;
     backups = {
       primary = {
         user = "restic";
-        environmentFile = "/data/meta/restic.env";
+        passwordFile = "/data/meta/backups/restic.primary.password";
+        repositoryFile = "/data/meta/backups/restic.primary.repo";
+        environmentFile = "/data/meta/backups/restic.primary.env";
         paths = [
           "/data"
         ];
         initialize = true;
         pruneOpts = [
-          "--keep-within-hourly 9h"
+          "--keep-within-hourly 18h"
           "--keep-within-daily 7d"
-          "--keep-within-weekly 5w"
+          "--keep-within-weekly 35d"
           "--keep-within-monthly 12m"
           "--keep-within-yearly 75y"
           "--max-unused 10G"
         ];
         timerConfig = {
-          OnBootSec = "hourly";
-          OnActiveSec = "01:25:00";
+          OnCalendar = "*-*-* 0..23/1:00:00";
+          Persistent = true;
           RandomizedDelaySec = "20m";
         };
         checkOpts = [ "--with-cache" ];
@@ -45,6 +46,7 @@
           "/data/home/*/Downloads/*.img"
           "/data/home/*/Downloads/*.deb"
           "/data/home/*/.config/vivaldi"
+          "/data/etc/NetworkManager"
           "Cache"
           "CachedData"
           "cache"
@@ -56,15 +58,14 @@
       };
     };
   };
+
+  systemd.services.restic-backups-primary.serviceConfig.AmbientCapabilities = [
+    "CAP_DAC_READ_SEARCH"
+  ];
+
   users.users.restic = {
     isSystemUser = true;
+    group = "restic";
   };
-
-  security.wrappers.restic = {
-    source = "${pkgs.restic.out}/bin/restic";
-    owner = "restic";
-    group = "users";
-    permissions = "u=rwx,g=,o=";
-    capabilities = "cap_dac_read_search=+ep";
-  };
+  users.groups.restic = { };
 }

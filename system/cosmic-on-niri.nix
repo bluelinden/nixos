@@ -74,10 +74,13 @@
   ];
   xdg.portal.enable = true;
   xdg.portal.extraPortals = [
-    pkgs.xdg-desktop-portal-gnome
     pkgs.xdg-desktop-portal-gtk
     specialArgs.inputs.nixos-cosmic.packages.x86_64-linux.xdg-desktop-portal-cosmic
+    pkgs.xdg-desktop-portal-gnome
   ];
-  xdg.portal.configPackages = [ specialArgs.s-nixpkgs.niri-unstable ];
+  xdg.portal.configPackages = [ 
+    specialArgs.inputs.nixos-cosmic.packages.x86_64-linux.xdg-desktop-portal-cosmic 
+    specialArgs.s-nixpkgs.niri-unstable 
+  ];
 
 }

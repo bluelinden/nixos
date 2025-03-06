@@ -18,21 +18,30 @@ in
     xwayland-satellite-unstable
     xwayland-run
     gtklock
-    activitywatch
+    # activitywatch
     dconf-editor
     gnome-sound-recorder
     ghex
     gnome-terminal
     gitg
-    bottles
+
+    vcv-rack
+
+    redact
+    
+    # bottles
     firefox-bin
     upkgs.zed-editor
+    thunderbird-latest
     # upkgs.upscayl
     direnv
-    gimp-with-plugins
+    # gimp-with-plugins
 
-    thunderbird
+    # qFlipper
+
+    # thunderbird
     tuba
+    slack
     gay
     fractal
     #    upkgs.libresprite
@@ -49,7 +58,7 @@ in
     # rustup
     qmk
     vial
-    binwalk
+    # binwalk
     lame
     zoxide
     # pulsar
@@ -74,10 +83,13 @@ in
     php81Packages.composer
     upkgs.kanidm
     libreoffice
-    upkgs.blender
+    # upkgs.blender
     olive-editor
-    looking-glass-client
+    # looking-glass-client
     upkgs.warp-terminal
+
+    keypunch
+    delfin
 
     pamixer
     # upkgs.minecraft
@@ -85,29 +97,43 @@ in
     iagno
     fraunces
     lexend
-    nerdfonts
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.zed-mono
     upkgs.pgmodeler
     sqlfluff
     # upkgs.aseprite
-    steamPackages.steamcmd
+    steamcmd
     openloco
     openttd
 
     checkra1n
 
+    usbguard-notifier
+
     upkgs.aseprite
 
+    # cosmic-ext-applet-clipboard-manager
+    # cosmic-ext-applet-emoji-selector
+    # cosmic-ext-applet-external-monitor-brightness
+
     # upkgs.inkscape
+    #
+    penpot-desktop
+
+    (colloid-gtk-theme.override {sizeVariants = ["compact"];})
+    
     ookla-speedtest
     emulsion-palette
     halftone
     imhex
     sniffnet
     safeeyes
-    dell-command-configure
+    # dell-command-configure
     drawing
+    nil
+    nixfmt-classic
     ungoogled-chromium
-    networkmanagerapplet
+    # networkmanagerapplet
     (vivaldi.override {
       commandLineArgs = [
         "--enable-features=UseOzonePlatform"
@@ -192,7 +218,7 @@ in
       };
     };
 
-    vscode = code-configuration;
+    # vscode = code-configuration;
 
     # stylix.targets.vscode.enable = false;
 
@@ -341,6 +367,7 @@ in
             accel-profile = "adaptive";
             click-method = "clickfinger";
             tap-button-map = "left-right-middle";
+            scroll-factor = 0.6;
           };
           trackpoint = {
             accel-profile = "flat";
@@ -376,28 +403,28 @@ in
         animations = {
           horizontal-view-movement = {
             spring = {
-              damping-ratio = 0.600000;
+              damping-ratio = 0.700000;
               epsilon = 0.000100;
               stiffness = 600;
             };
           };
           window-movement = {
             spring = {
-              damping-ratio = 0.600000;
+              damping-ratio = 0.700000;
               epsilon = 0.000100;
               stiffness = 600;
             };
           };
           window-resize = {
             spring = {
-              damping-ratio = 0.600000;
+              damping-ratio = 0.700000;
               epsilon = 0.000100;
               stiffness = 600;
             };
           };
           window-open = {
             spring = {
-              damping-ratio = 0.600000;
+              damping-ratio = 0.700000;
               epsilon = 0.000100;
               stiffness = 600;
             };
@@ -420,6 +447,9 @@ in
           "XF86AudioLowerVolume" = { action.spawn = [ "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05-" ]; allow-when-locked = true; };
           "XF86AudioMute" = { action.spawn = [ "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle" ]; allow-when-locked = true; };
           "XF86AudioMicMute" = { action.spawn = [ "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle" ]; allow-when-locked = true; };
+          "XF86MonBrightnessDown" = { action.spawn = [ "brightnessctl" "s" "5%-" ]; allow-when-locked = true; };
+          "XF86MonBrightnessUp" = { action.spawn = [ "brightnessctl" "s" "+5%" ]; allow-when-locked = true; };
+          
 
           # quit
           "Mod+Q".action = close-window;
@@ -515,6 +545,9 @@ in
           {
             command = [ "${pkgs.dbus}/bin/dbus-update-activation-environment" "DISPLAY" ];
           }
+          {
+            command = [ "${pkgs.systemd}/bin/systemctl" "--user" "import-environment" ];
+          }
         ];
         prefer-no-csd = true;
       };
@@ -523,6 +556,8 @@ in
 
 
     };
+
+    
 
     #    hyprlock = {
     #      enable = true;
@@ -596,6 +631,7 @@ in
     };
 
     thefuck.enable = true;
+    thefuck.enableNushellIntegration = true;
 
 
   };
@@ -641,9 +677,9 @@ in
       };
 
     };
-    network-manager-applet.enable = true;
+    # network-manager-applet.enable = true;
 
-    blueman-applet.enable = true;
+    # blueman-applet.enable = true;
 
     kanshi = {
       enable = true;
@@ -689,10 +725,27 @@ in
       };
     };
 
+    gammastep = {
+      provider = "geoclue2";
+      enable = true;
+      settings = {
+        general.adjustment-method = "wayland";
+      };
+      tray = true;
+    };
+
   };
+
+  systemd.user.services.gammastep.unitConfig.Environment = "WAYLAND_DISPLAY=wayland-1";
 
   systemd.user.services.hypridle.Unit.After = lib.mkForce
     [ "graphical-session.target" ];
+
+
+  # systemd.user.services.usbguard-notifier = {
+  #   script = "${pkgs.usbguard-notifier}/bin/usbguard-notifier";
+  #   after = "graphical-session.target";
+  # };
 
 
   dconf.settings."org/blueman/general" = {

@@ -7,6 +7,7 @@
           system = "x86_64-linux";
           config.allowUnfree = true;
           config.joypixels.acceptLicense = true;
+          config.input-fonts.acceptLicense = true;
           config.permittedInsecurePackages = [
             "electron-25.9.0"
             "electron-27.3.11"
@@ -33,6 +34,7 @@
               "cache.lix.systems:aBnZUw8zA7H35Cz2RyKFVs3H4PlGTLawyY5KRbvJR8o="
             ];
           }
+          inputs.sops-nix.nixosModules.sops
           {
             nix.settings = {
               substituters = [ "https://cosmic.cachix.org/" ];
@@ -52,7 +54,7 @@
 
   inputs = {
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
-    impermanence.url = "github:nix-community/impermanence";
+    impermanence.url = "github:bluelinden/impermanence";
 
 
     fenix = {
@@ -71,7 +73,7 @@
       inputs.nixpkgs.follows = "s-nixpkgs";
     };
     cosmic-ext-alternative-startup.url = "github:bluelinden/cosmic-ext-alternative-startup";
-    zen-browser.url = "github:FBIGlowie/zen-browser-flake";
+    zen-browser.url = "github:leonhazen/zen-browser-flake";
     zen-browser.inputs.nixpkgs.follows = "s-nixpkgs";
     stylix.url = "github:danth/stylix/cf8b6e2d4e8aca8ef14b839a906ab5eb98b08561";
     # jovian = {
@@ -81,6 +83,8 @@
 
     nix-index-database.url = "github:Mic92/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "u-nixpkgs";
+    
+    sops-nix.url = "github:Mic92/sops-nix";
 
     u-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     s-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

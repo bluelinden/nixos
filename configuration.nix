@@ -32,6 +32,7 @@ in
       ./system/utils/ydotool.nix
       ./system/boo.backups.nix
       ./system/cosmic-on-niri.nix
+      ./system/boo.usb.nix
     ];
 
   # Allow unfree packages
@@ -49,13 +50,13 @@ in
     # crashDump.enable = true;
     # initrd.verbose = false;
     # consoleLogLevel = 0;
-    # kernelParams = [ "quiet" "splash" "rd.systemd.show_status=false" "rd.udev.log_level=3" "udev.log_priority=3" ];
+    kernelParams = [ "threadirqs" "preempt=full" "intel_pstate=passive" ];
     initrd.systemd.enable = true;
     initrd.systemd.emergencyAccess = false;
     initrd.kernelModules = [ "tpm-tis" "i915" ];
 
     # initrd.systemd.emergencyAccess = (import ./emergency-access-password.nix).pwd;
-    # kernelPackages = upkgs.linuxPackages_xanmod_latest;
+    kernelPackages = upkgs.linuxPackages_xanmod_latest;
     # extraModulePackages = with config.boot.kernelPackages; [ digimend ];
     loader.systemd-boot.graceful = true;
     loader.timeout = 0;
@@ -77,12 +78,13 @@ in
     binfmt.emulatedSystems = [ "aarch64-linux" ];
   };
 
-  services.ddccontrol.enable = true;
+  # services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
-  # hardware.xpadneo.enable = true;
-  # hardware.opentabletdriver.enable = true;
-  # hardware.xone.enable = true;
+  hardware.xpadneo.enable = true;
+  hardware.opentabletdriver.enable = true;
+  hardware.xone.enable = true;
   hardware.cpu.intel.updateMicrocode = true;
+  hardware.flipperzero.enable = true;
 
   services.kmscon = {
     enable = true;
@@ -135,7 +137,7 @@ in
   services.accounts-daemon.enable = true;
   services.dleyna-renderer.enable = true;
   services.dleyna-server.enable = true;
-  services.power-profiles-daemon.enable = false;
+  services.power-profiles-daemon.enable = true;
   services.gnome.at-spi2-core.enable = true;
   services.gnome.evolution-data-server.enable = true;
   services.gnome.gnome-keyring.enable = true;
@@ -145,6 +147,11 @@ in
   # services.packagekit.enable = mkDefault true;
   services.udisks2.enable = true;
   services.upower.enable = config.powerManagement.enable;
+
+  services.dbus = {
+    implementation = "broker";
+    apparmor = "enabled";
+  };
 
   xdg.mime.enable = true;
   xdg.icons.enable = true;
@@ -164,7 +171,7 @@ in
   ];
 
 
-  services.tlp.enable = true;
+  # services.tlp.enable = true;
 
   services.logind = {
     lidSwitch = "suspend";
@@ -174,10 +181,10 @@ in
 
 
 
-  services.usbmuxd = {
-    enable = true;
-    package = pkgs.usbmuxd2;
-  };
+  # services.usbmuxd = {
+    # enable = true;
+  #   # package = pkgs.usbmuxd2;
+  # };
 
   services.fwupd.enable = true;
 
@@ -216,7 +223,7 @@ in
 
   hardware.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
-  hardware.opengl = {
+  hardware.graphics = {
     # driSupport32Bit = false;
     enable = true;
     extraPackages = with pkgs; [
@@ -261,6 +268,9 @@ in
     # use the example session manager (no others are packaged yet so this is enabled by default,
     # no need to redefine it in your config for now)
     #media-session.enable = true;
+    wireplumber.extraConfig = {
+      "allow-midi" = {"node.features.audio.control-port" = true;};
+    };
   };
 
   programs.dconf.enable = true;
@@ -334,9 +344,9 @@ in
   users.users.blue = {
     isNormalUser = true;
     description = "blue linden";
-    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" "wireshark" ];
+    extraGroups = [ "networkmanager" "wheel" "configmanager" "plugdev" "i2c" "ddc" "libvirtd" "dialout" "uinput" "input" "wireshark" "usbguard" ];
     shell = pkgs.bash;
-    passwordFile = "/state/etc/blpw";
+    hashedPasswordFile = "/state/etc/blpw";
   };
   users.groups.configmanager = {
     name = "configmanager";
@@ -344,8 +354,18 @@ in
     gid = 1337;
   };
 
+  systemd.user.services.usbguard-notifier = {
+    script = "${pkgs.usbguard-notifier}/bin/usbguard-notifier -w";
+    after = [ "graphical-session.target" ];
+    unitConfig = {
+      ConditionGroup = "usbguard";
+    };
+  };
+
+
 
   users.groups.ddc = { };
+  users.groups.usbguard = { };
 
   users.mutableUsers = false;
 
@@ -382,6 +402,8 @@ in
     mkcert
     hexedit
 
+    lynis
+
     screen
     brightnessctl
     # localwp
@@ -415,6 +437,10 @@ in
 
     sound-theme-freedesktop
 
+    godot_4
+
+    git-crypt
+    
     qemu
     unzip
     gnumake
@@ -458,16 +484,16 @@ in
 
     # rev-eng stuff
     e2fsprogs
-    jefferson
+    # jefferson
     pigz
     mtdutils
     _7zz
     python311Packages.bincopy
-    binwalk
+    # binwalk
     sasquatch
     zip
     unar
-    ghidra
+    # ghidra
     python311Packages.python-lzo
     arp-scan
     nmap
@@ -493,6 +519,7 @@ in
     rust-bindgen
     upkgs.devenv
     wl-clipboard
+    input-fonts
 
     webkitgtk.dev
     librsvg.dev
@@ -566,7 +593,7 @@ in
   system.stateVersion = "23.05"; # Did you read the comment?
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.optimise.automatic = true;
-  nix.trustedUsers = [ "root" "blue" ];
+  nix.settings.trusted-users = [ "root" "blue" ];
   nix.extraOptions = ''
     min-free = ${toString (5 * 1024 * 1024 * 1024)}
     max-free = ${toString (15 * 1024 * 1024 * 1024)}
@@ -587,10 +614,12 @@ in
   programs.zsh.autosuggestions.enable = true;
   programs.zsh.ohMyZsh.enable = true;
   zramSwap.enable = true;
-  powerManagement.cpufreq.min = 100000;
+  powerManagement.cpufreq.min = 400000;
   powerManagement.enable = true;
+  powerManagement.cpuFreqGovernor = "ondemand";
   powerManagement.powertop.enable = true;
   location.provider = "geoclue2";
+  services.geoclue2.geoProviderUrl = "https://beacondb.net/v1/geolocate";
   # systemd.sleep.extraConfig = ''
   #   HibernateMode=shutdown
   #   SuspendState=freeze
@@ -645,16 +674,29 @@ in
       "flathub:app/com.github.tchx84.Flatseal/x86_64/stable"
       "flathub:app/org.gnome.Decibels/x86_64/stable"
       "flathub:app/com.valvesoftware.Steam/x86_64/stable"
+      "flathub:app/re.sonny.Workbench/x86_64/stable"
+      "flathub:app/com.github.iwalton3.jellyfin-media-player/x86_64/stable"
+      "flathub:runtime/org.freedesktop.Sdk.Extension.rust-stable/x86_64/24.08"
+      "flathub:runtime/org.freedesktop.Sdk.Extension.llvm18/x86_64/24.08"
+      "flathub:runtime/org.freedesktop.Sdk.Extension.node20/x86_64/24.08"
+      "flathub:runtime/org.freedesktop.Sdk.Extension.typescript/x86_64/24.08"
     ];
   };
   systemd.services.manage-system-flatpaks.serviceConfig.Nice = 20;
 
-
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
 
   fonts = {
     fontDir.enable = true;
     packages = [
       pkgs.joypixels
+      pkgs.nerd-fonts.jetbrains-mono
+      pkgs.nerd-fonts.zed-mono
+      pkgs.input-fonts
+      
     ];
     fontconfig.defaultFonts.emoji = [
       "JoyPixels"
@@ -677,10 +719,9 @@ in
       };
 
       monospace = {
-        package = pkgs.nerdfonts;
+        package = pkgs.nerd-fonts.jetbrains-mono;
         name = "JetBrainsMono Nerd Font";
       };
-
       emoji = {
         package = pkgs.joypixels;
         name = "JoyPixels";
@@ -696,13 +737,14 @@ in
         logo = "${pkgs.nixos-icons}/share/icons/hicolor/256x256/apps/nix-snowflake-white.png";
         logoAnimated = false;
       };
+      chromium.enable = false;
     };
   };
 
   # CHAOTIC NYX TROUBLE ZONE!!
   chaotic.nyx.overlay.enable = true;
   chaotic.nyx.cache.enable = true;
-  boot.kernelPackages = pkgs.linuxPackages_testing;
+  # boot.kernelPackages = pkgs.linuxPackages_testing;
   services.scx.enable = true;
   services.scx.scheduler = "scx_lavd";
 

@@ -80,6 +80,7 @@
       "/var/db/sudo/lectured/1000"
       "/var/db/sudo/lectured/blue"
       # { file = "/etc/users.oath"; }
+      "/var/lib/usbguard/rules.conf"
     ];
 
     users.blue = {
@@ -96,6 +97,7 @@
         ".local/zed.app"
         ".mozilla"
         ".zen"
+        ".thunderbird"
         ".npm"
         ".steam"
         ".var"

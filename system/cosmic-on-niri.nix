@@ -76,11 +76,19 @@
   xdg.portal.extraPortals = [
     pkgs.xdg-desktop-portal-gtk
     specialArgs.inputs.nixos-cosmic.packages.x86_64-linux.xdg-desktop-portal-cosmic
-    pkgs.xdg-desktop-portal-gnome
+    # pkgs.xdg-desktop-portal-gnome
   ];
+  xdg.portal.config = {
+    niri = {
+      default=["gtk"];
+      "org.freedesktop.impl.portal.Access"=["gtk"];
+      "org.freedesktop.impl.portal.Notification"=["gtk"];
+      "org.freedesktop.impl.portal.Secret"=["gnome-keyring"];
+    };
+  };
   xdg.portal.configPackages = [ 
     specialArgs.inputs.nixos-cosmic.packages.x86_64-linux.xdg-desktop-portal-cosmic 
-    specialArgs.s-nixpkgs.niri-unstable 
+    # specialArgs.s-nixpkgs.niri-unstable 
   ];
 
 }
